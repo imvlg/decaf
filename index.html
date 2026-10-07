@@ -29,10 +29,10 @@
       position: fixed;
       inset: 0;
       z-index: 0;
-      background: #e5ded2;
+      background: #bdbaa9;
     }
 
-    .leaflet-container { background: #e5ded2; }
+    .leaflet-container { background: #bdbaa9; }
     .leaflet-tile-pane { filter: sepia(.46) saturate(.62) hue-rotate(-5deg) brightness(1.02); }
     .leaflet-control-zoom { display: none; }
     .leaflet-control-attribution {
@@ -116,16 +116,14 @@
       inset: 0;
       width: 100%;
       height: 42px;
-      padding: 0 82px 0 4px;
-      border: 0;
-      border-bottom: 1px solid rgba(93, 61, 46, .45);
-      border-radius: 0;
+      padding: 0 82px 0 16px;
+      border: 1px solid rgba(93, 61, 46, .22);
+      border-radius: 999px;
       outline: none;
       color: var(--espresso);
-      background: rgba(248, 245, 238, .24);
+      background: #bdbaa9;
       font-size: 12px;
-      box-shadow: none;
-      backdrop-filter: blur(5px);
+      box-shadow: 0 4px 14px rgba(58, 39, 28, .12);
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
@@ -135,7 +133,7 @@
     }
     .search-control.open #search { opacity: 1; visibility: visible; pointer-events: auto; transform: scaleX(1); }
     #search::placeholder { color: #9a8e82; }
-    #search:focus { border-bottom-color: #5d3d2e; box-shadow: none; }
+    #search:focus { border-color: #5d3d2e; box-shadow: 0 4px 14px rgba(58, 39, 28, .16); }
     .clear-search {
       position: absolute;
       z-index: 3;
@@ -217,16 +215,18 @@
     .cafe-card {
       position: fixed;
       z-index: 460;
-      right: 22px;
+      right: 74px;
       bottom: 22px;
-      width: 290px;
+      width: 360px;
+      max-height: min(78vh, 650px);
       display: none;
-      padding: 17px;
+      padding: 16px;
       border: 1px solid rgba(255, 253, 248, .9);
       border-radius: 15px;
       background: rgba(255, 253, 248, .96);
       box-shadow: 0 12px 36px rgba(58, 39, 28, .16);
       backdrop-filter: blur(16px);
+      overflow-y: auto;
     }
     .cafe-card.open { display: block; }
     .cafe-card-head { display: flex; align-items: flex-start; gap: 12px; }
@@ -268,30 +268,124 @@
     .visit-toggle.visited { border-color: #746d55; color: #fffaf2; background: #746d55; }
     .visit-toggle svg { width: 14px; height: 14px; }
 
-    .pin {
+    .review-section,
+    .review-form {
+      margin-top: 15px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+    .review-section h2,
+    .review-form h2 {
+      margin: 0 0 10px;
+      color: var(--espresso);
+      font: 16px/1.2 Georgia, "Times New Roman", serif;
+    }
+    .review-list { display: grid; gap: 9px; }
+    .review-empty,
+    .storage-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.5;
+    }
+    .review-item {
+      padding: 10px;
+      border-radius: 10px;
+      background: #f4f0e7;
+    }
+    .review-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .review-author { color: var(--espresso); font-size: 11px; font-weight: 650; }
+    .review-date { color: var(--muted); font-size: 9px; }
+    .review-beans { display: inline-flex; gap: 2px; margin-top: 4px; color: #815e48; }
+    .review-beans svg { width: 13px; height: 13px; }
+    .review-meta { margin: 5px 0 0; color: var(--clay); font-size: 10px; }
+    .review-text { margin: 6px 0 0; color: var(--espresso); font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
+    .review-photo { display: block; width: 100%; max-height: 190px; margin-top: 8px; border-radius: 8px; object-fit: cover; }
+    .review-fields { display: grid; gap: 9px; }
+    .review-label { display: grid; gap: 5px; color: var(--muted); font-size: 10px; }
+    .review-input,
+    .review-select,
+    .review-textarea {
+      width: 100%;
+      min-height: 36px;
+      padding: 8px 10px;
+      border: 1px solid #e2d9cd;
+      border-radius: 8px;
+      outline: none;
+      color: var(--espresso);
+      background: #fffdf8;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .review-textarea { min-height: 68px; resize: vertical; }
+    .review-input:focus,
+    .review-select:focus,
+    .review-textarea:focus { border-color: #afa089; }
+    .rating-field { margin: 0; padding: 0; border: 0; }
+    .rating-field legend { margin-bottom: 5px; color: var(--muted); font-size: 10px; }
+    .bean-rating { display: flex; gap: 5px; }
+    .bean-score {
       width: 30px;
       height: 30px;
       display: grid;
       place-items: center;
-      border: 1px solid rgba(255, 253, 248, .95);
-      border-radius: 50%;
-      color: #fffaf2;
-      background: #88664e;
-      box-shadow: 0 3px 10px rgba(53, 36, 26, .3);
+      padding: 0;
+      border: 0;
+      border-radius: 7px;
+      color: #d6cbbc;
+      background: transparent;
     }
-    .pin.visited { color: #fffaf2; background: #4c382d; }
-    .pin svg { width: 13px; height: 18px; }
-    .cluster {
-      width: 40px;
-      height: 40px;
+    .bean-score svg { width: 21px; height: 21px; }
+    .bean-score.active,
+    .bean-score:hover { color: #5d3d2e; }
+    .review-drink-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 9px; }
+    .decaf-option { min-height: 36px; display: flex; align-items: center; gap: 6px; color: var(--clay); font-size: 10px; white-space: nowrap; }
+    .decaf-option input { accent-color: #5d3d2e; }
+    .price-wrap { position: relative; }
+    .price-wrap .review-input { padding-right: 35px; }
+    .price-currency { position: absolute; top: 11px; right: 10px; color: var(--muted); font-size: 10px; pointer-events: none; }
+    .photo-pick { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; cursor: pointer; }
+    .photo-pick input { display: none; }
+    .photo-button { padding: 7px 10px; border: 1px solid #e2d9cd; border-radius: 8px; color: var(--roast); background: #f4f0e7; }
+    .review-status { min-height: 14px; margin: 0; color: var(--clay); font-size: 10px; }
+    .submit-review {
+      width: 100%;
+      min-height: 38px;
+      border: 0;
+      border-radius: 9px;
+      color: #fffaf2;
+      background: #5d3d2e;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .submit-review:disabled { opacity: .65; cursor: wait; }
+
+    .pin {
+      width: 28px;
+      height: 32px;
       display: grid;
       place-items: center;
-      border: 1px solid rgba(255, 253, 248, .95);
+      border: 1.5px solid #f4f0e7;
+      border-radius: 50% 50% 50% 4px;
+      color: #fffaf2;
+      background: #5d3d2e;
+      box-shadow: 0 2px 6px rgba(53, 36, 26, .26);
+      transform: rotate(-45deg);
+    }
+    .pin.visited { color: #3b271f; background: #afa089; }
+    .pin svg { width: 16px; height: 16px; transform: rotate(45deg); }
+    .cluster {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #f4f0e7;
       border-radius: 50%;
       color: #fffaf2;
-      background: rgba(93, 61, 46, .94);
-      box-shadow: 0 4px 13px rgba(53, 36, 26, .25);
-      font: 14px Georgia, "Times New Roman", serif;
+      background: #5d3d2e;
+      box-shadow: 0 2px 7px rgba(53, 36, 26, .22);
+      font: 600 12px/1 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     @media (max-width: 700px) {
@@ -318,6 +412,7 @@
         right: 10px;
         bottom: calc(68px + env(safe-area-inset-bottom));
         width: auto;
+        max-height: calc(100dvh - 150px);
         padding: 14px;
       }
       .leaflet-control-attribution {
@@ -368,6 +463,49 @@
       <button class="close-card" id="closeCard" aria-label="Закрити">×</button>
     </div>
     <button class="visit-toggle" id="visitToggle"></button>
+    <section class="review-section" aria-labelledby="reviewListTitle">
+      <h2 id="reviewListTitle">Відгуки</h2>
+      <div class="review-list" id="reviewList"></div>
+    </section>
+    <form class="review-form" id="reviewForm">
+      <h2>Твій відгук</h2>
+      <div class="review-fields">
+        <label class="review-label">Ім’я
+          <input class="review-input" id="reviewAuthor" name="author" maxlength="32" autocomplete="name" placeholder="Як до тебе звертатись?" required>
+        </label>
+        <fieldset class="rating-field">
+          <legend>Оцінка</legend>
+          <div class="bean-rating" id="beanRating" role="group" aria-label="Оцінка від 1 до 5 зерняток">
+            <button class="bean-score" type="button" data-rating="1" aria-label="1 з 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="currentColor"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+            <button class="bean-score" type="button" data-rating="2" aria-label="2 з 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="currentColor"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+            <button class="bean-score" type="button" data-rating="3" aria-label="3 з 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="currentColor"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+            <button class="bean-score" type="button" data-rating="4" aria-label="4 з 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="currentColor"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+            <button class="bean-score" type="button" data-rating="5" aria-label="5 з 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="currentColor"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+          </div>
+          <input id="reviewRating" name="rating" type="hidden">
+        </fieldset>
+        <div class="review-drink-row">
+          <label class="review-label">Напій
+            <select class="review-select" id="reviewDrink" name="drink" required>
+              <option value="" disabled selected>Обрати напій</option>
+              <option>Фільтр</option><option>Лате</option><option>Капучино</option>
+              <option>Флет вайт</option><option>Американо</option><option>Еспресо</option><option>Інший</option>
+            </select>
+          </label>
+          <label class="decaf-option"><input id="reviewDecaf" type="checkbox"> Декаф</label>
+        </div>
+        <label class="review-label">Ціна
+          <span class="price-wrap"><input class="review-input" id="reviewPrice" type="number" min="0" max="3000" step="1" inputmode="numeric" placeholder="Не вказувати"><span class="price-currency">грн</span></span>
+        </label>
+        <label class="review-label">Короткий відгук
+          <textarea class="review-textarea" id="reviewText" maxlength="280" placeholder="Що сподобалось у напої?" required></textarea>
+        </label>
+        <label class="photo-pick"><input id="reviewPhoto" type="file" accept="image/*"><span class="photo-button">Додати фото</span><span id="photoFileName">Фото необов’язкове</span></label>
+        <p class="review-status" id="reviewStatus" aria-live="polite"></p>
+        <button class="submit-review" id="submitReview" type="submit">Зберегти відгук</button>
+      </div>
+    </form>
+    <p class="storage-note">Зараз відгуки зберігаються лише в цьому браузері.</p>
   </section>
 
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -375,6 +513,8 @@
     (() => {
       const CAFE_CACHE = "decaf-osm-cafes-v2";
       const VISITED_KEY = "decaf-visited-v1";
+      const REVIEWS_KEY = "decaf-reviews-v1";
+      const AUTHOR_KEY = "decaf-review-author-v1";
       const KYIV_AREA = 3600421866;
       const KYIV_RELATION = 421866;
       const KYIV_CENTER = [50.4501, 30.5234];
@@ -390,9 +530,12 @@
       let cafesCachedAt = readCafeCacheTime();
       let cityBoundary = readCityBoundaryCache();
       let visited = readVisited();
+      let reviews = readReviews();
       let map;
       let cafePins;
-      let cityFocusLayer;
+      let cityMaskLayer;
+      let cityBoundaryLayer;
+      let mapDrawFrame = 0;
       let selectedCafe = null;
       let activeFilter = "all";
 
@@ -432,6 +575,32 @@
         }
       }
 
+      function readReviews() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(REVIEWS_KEY));
+          return Array.isArray(stored) ? stored : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveReviews() {
+        try {
+          localStorage.setItem(REVIEWS_KEY, JSON.stringify(reviews));
+          return true;
+        } catch {
+          return false;
+        }
+      }
+
+      function readReviewAuthor() {
+        try {
+          return localStorage.getItem(AUTHOR_KEY) || "";
+        } catch {
+          return "";
+        }
+      }
+
       function saveVisited() {
         localStorage.setItem(VISITED_KEY, JSON.stringify(Array.from(visited)));
       }
@@ -466,6 +635,7 @@
           if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
 
           const tags = place.tags || {};
+          if (tags.amenity !== "cafe" && tags.shop !== "coffee") return;
           const name = (tags.name || tags["name:uk"] || tags.brand || "Кав’ярня").trim();
           const key = name.toLocaleLowerCase("uk") + "|" + lat.toFixed(4) + "|" + lon.toFixed(4);
           if (unique.has(key)) return;
@@ -534,31 +704,36 @@
         map.setMaxBounds(bounds);
       }
 
-      function drawKyivFocus() {
-        if (!map || !cityFocusLayer || !cityBoundary.length) return;
-        cityFocusLayer.clearLayers();
+      function drawKyivMask() {
+        if (!map || !cityMaskLayer || !cityBoundaryLayer || !cityBoundary.length) return;
+        cityMaskLayer.clearLayers();
 
-        const bounds = map.getBounds();
-        const southWest = bounds.getSouthWest();
-        const northEast = bounds.getNorthEast();
-        const viewport = [
+        const points = cityBoundary.flatMap((ring) => ring.points);
+        const maskBounds = L.latLngBounds(points).pad(6);
+        const southWest = maskBounds.getSouthWest();
+        const northEast = maskBounds.getNorthEast();
+        const frame = [
           [southWest.lat, southWest.lng],
           [northEast.lat, southWest.lng],
           [northEast.lat, northEast.lng],
           [southWest.lat, northEast.lng],
           [southWest.lat, southWest.lng]
         ];
-        const maskRings = [viewport, ...cityBoundary.map((ring) => ring.points)];
+        const maskRings = [frame, ...cityBoundary.map((ring) => ring.points)];
 
         L.polygon(maskRings, {
           pane: "cityMaskPane",
           stroke: false,
-          fillColor: "#3b271f",
-          fillOpacity: .42,
+          fillColor: "#bdbaa9",
+          fillOpacity: 1,
           fillRule: "evenodd",
           interactive: false
-        }).addTo(cityFocusLayer);
+        }).addTo(cityMaskLayer);
+      }
 
+      function drawKyivBoundary() {
+        if (!map || !cityBoundaryLayer || !cityBoundary.length) return;
+        cityBoundaryLayer.clearLayers();
         cityBoundary.forEach((ring) => {
           L.polyline(ring.points, {
             pane: "cityGlowPane",
@@ -568,7 +743,7 @@
             lineCap: "round",
             lineJoin: "round",
             interactive: false
-          }).addTo(cityFocusLayer);
+          }).addTo(cityBoundaryLayer);
           L.polyline(ring.points, {
             pane: "cityBorderPane",
             color: "#5d3d2e",
@@ -577,22 +752,35 @@
             lineCap: "round",
             lineJoin: "round",
             interactive: false
-          }).addTo(cityFocusLayer);
+          }).addTo(cityBoundaryLayer);
+        });
+      }
+
+      function drawKyivFocus() {
+        drawKyivMask();
+        drawKyivBoundary();
+      }
+
+      function scheduleMapDraw() {
+        if (mapDrawFrame) return;
+        mapDrawFrame = requestAnimationFrame(() => {
+          mapDrawFrame = 0;
+          drawPins();
         });
       }
 
       function pinIcon(cafe) {
         const state = visited.has(cafe.id) ? "pin visited" : "pin";
-        const svg = '<svg viewBox="0 0 20 30" fill="none" aria-hidden="true"><path d="M15.8 2.7C11.3.5 5 3.8 2.8 10.4.8 16.7 3.5 23.8 8.4 26c4.7 2 9.7-2.4 10.4-8.8.6-5.6-1-12.5-3-14.5Z" stroke="currentColor" stroke-width="1.4"/><path d="M5 23.5c4.8-5.5 6.7-11.5 10-18" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
-        return L.divIcon({ className: "", html: '<span class="' + state + '">' + svg + "</span>", iconSize: [30, 30], iconAnchor: [15, 15] });
+        const svg = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8h9.8l-.8 6.1a2 2 0 0 1-2 1.7H7.3a2 2 0 0 1-2-1.7L4.5 8Z"/><path d="M14.2 9h1.2a2 2 0 0 1 0 4h-1.8M7 5.8c0-1 1-1 1-2M11 5.8c0-1 1-1 1-2"/></svg>';
+        return L.divIcon({ className: "", html: '<span class="' + state + '">' + svg + "</span>", iconSize: [28, 32], iconAnchor: [14, 16] });
       }
 
       function clusterIcon(count) {
         return L.divIcon({
           className: "",
           html: '<span class="cluster">' + count + "</span>",
-          iconSize: [40, 40],
-          iconAnchor: [20, 20]
+          iconSize: [36, 36],
+          iconAnchor: [18, 18]
         });
       }
 
@@ -600,14 +788,15 @@
         if (!map || !cafePins) return;
         cafePins.clearLayers();
 
-        const places = placesToShow();
+        const visibleBounds = map.getBounds().pad(.12);
+        const places = placesToShow().filter((cafe) => visibleBounds.contains([cafe.lat, cafe.lon]));
         const zoom = map.getZoom();
 
-        if (zoom < 14) {
+        if (zoom < 16) {
           const groups = new Map();
           places.forEach((cafe) => {
             const point = map.project([cafe.lat, cafe.lon], zoom);
-            const key = Math.floor(point.x / 38) + ":" + Math.floor(point.y / 38);
+            const key = Math.floor(point.x / 50) + ":" + Math.floor(point.y / 50);
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key).push(cafe);
           });
@@ -647,6 +836,12 @@
         selectedCafe = cafe;
         byId("cafeName").textContent = cafe.name;
         byId("cafeAddress").textContent = cafe.address;
+        byId("reviewForm").reset();
+        byId("reviewAuthor").value = readReviewAuthor();
+        byId("photoFileName").textContent = "Фото необов’язкове";
+        byId("reviewStatus").textContent = "";
+        setReviewRating(0);
+        renderCafeReviews();
         updateVisitButton();
         byId("cafeCard").classList.add("open");
         drawPins();
@@ -667,13 +862,106 @@
         drawPins();
       }
 
+      function setReviewRating(value) {
+        const rating = Number(value) || 0;
+        byId("reviewRating").value = rating ? String(rating) : "";
+        document.querySelectorAll(".bean-score").forEach((button) => {
+          const score = Number(button.dataset.rating);
+          button.classList.toggle("active", score <= rating);
+          button.setAttribute("aria-pressed", String(score === rating));
+        });
+      }
+
+      function renderCafeReviews() {
+        const list = byId("reviewList");
+        list.replaceChildren();
+        const cafeReviews = reviews
+          .filter((review) => review.cafeId === selectedCafe.id)
+          .sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+
+        if (!cafeReviews.length) {
+          const empty = document.createElement("p");
+          empty.className = "review-empty";
+          empty.textContent = "Поки немає відгуків.";
+          list.append(empty);
+          return;
+        }
+
+        cafeReviews.forEach((review) => {
+          const item = document.createElement("article");
+          item.className = "review-item";
+
+          const head = document.createElement("div");
+          head.className = "review-item-head";
+          const author = document.createElement("span");
+          author.className = "review-author";
+          author.textContent = review.author || "Гість";
+          const date = document.createElement("time");
+          date.className = "review-date";
+          date.dateTime = new Date(Number(review.createdAt)).toISOString();
+          date.textContent = new Date(Number(review.createdAt)).toLocaleDateString("uk-UA", { day: "numeric", month: "short", year: "numeric" });
+          head.append(author, date);
+
+          const rating = document.createElement("div");
+          rating.className = "review-beans";
+          rating.setAttribute("aria-label", "Оцінка " + review.rating + " з 5");
+          rating.innerHTML = Array.from({ length: 5 }, (_, index) => {
+            const color = index < Number(review.rating) ? "#815e48" : "#d6cbbc";
+            return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="' + color + '"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg>';
+          }).join("");
+
+          const details = [review.drink, review.decaf ? "декаф" : "", review.price != null ? review.price + " грн" : ""].filter(Boolean);
+          const meta = document.createElement("p");
+          meta.className = "review-meta";
+          meta.textContent = details.join(" · ");
+          const text = document.createElement("p");
+          text.className = "review-text";
+          text.textContent = review.text;
+
+          item.append(head, rating, meta, text);
+          if (review.photo) {
+            const photo = document.createElement("img");
+            photo.className = "review-photo";
+            photo.src = review.photo;
+            photo.alt = "Фото з відгуку від " + (review.author || "гостя");
+            photo.loading = "lazy";
+            item.append(photo);
+          }
+          list.append(item);
+        });
+      }
+
+      async function compressReviewPhoto(file) {
+        if (!file) return "";
+        if (!file.type.startsWith("image/")) throw new Error("Обери файл-зображення.");
+        if (file.size > 12 * 1024 * 1024) throw new Error("Фото має бути менше 12 МБ.");
+
+        const objectUrl = URL.createObjectURL(file);
+        try {
+          const image = new Image();
+          await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = () => reject(new Error("Не вдалося відкрити це фото."));
+            image.src = objectUrl;
+          });
+          const scale = Math.min(1, 1000 / Math.max(image.naturalWidth, image.naturalHeight));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(image.naturalWidth * scale);
+          canvas.height = Math.round(image.naturalHeight * scale);
+          canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+          return canvas.toDataURL("image/jpeg", .78);
+        } finally {
+          URL.revokeObjectURL(objectUrl);
+        }
+      }
+
       async function loadCafes() {
+        if (cityBoundary.length) {
+          keepMapOnKyiv();
+          drawKyivFocus();
+        }
         if (cafes.length) {
           drawPins();
-          if (cityBoundary.length) {
-            keepMapOnKyiv();
-            drawKyivFocus();
-          }
           if (cityBoundary.length && Date.now() - cafesCachedAt < CACHE_TTL) return;
         }
 
@@ -768,6 +1056,64 @@
         drawPins();
         byId("search").focus();
       });
+
+      byId("reviewAuthor").value = readReviewAuthor();
+      document.querySelectorAll(".bean-score").forEach((button) => {
+        button.addEventListener("click", () => setReviewRating(button.dataset.rating));
+      });
+      byId("reviewPhoto").addEventListener("change", () => {
+        const file = byId("reviewPhoto").files[0];
+        byId("photoFileName").textContent = file ? file.name : "Фото необов’язкове";
+        byId("reviewStatus").textContent = "";
+      });
+      byId("reviewForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!selectedCafe) return;
+        const rating = Number(byId("reviewRating").value);
+        if (!rating) {
+          byId("reviewStatus").textContent = "Обери оцінку від 1 до 5 зерняток.";
+          return;
+        }
+        if (!byId("reviewForm").reportValidity()) return;
+
+        const submit = byId("submitReview");
+        submit.disabled = true;
+        byId("reviewStatus").textContent = "Зберігаю…";
+        try {
+          const author = byId("reviewAuthor").value.trim();
+          const review = {
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+            cafeId: selectedCafe.id,
+            cafeName: selectedCafe.name,
+            author,
+            rating,
+            drink: byId("reviewDrink").value,
+            decaf: byId("reviewDecaf").checked,
+            price: byId("reviewPrice").value === "" ? null : Number(byId("reviewPrice").value),
+            text: byId("reviewText").value.trim(),
+            photo: await compressReviewPhoto(byId("reviewPhoto").files[0]),
+            createdAt: Date.now()
+          };
+
+          reviews.unshift(review);
+          if (!saveReviews()) {
+            reviews.shift();
+            byId("reviewStatus").textContent = "Не вистачає місця для збереження фото. Спробуй інше фото.";
+            return;
+          }
+          try { localStorage.setItem(AUTHOR_KEY, author); } catch { }
+          byId("reviewForm").reset();
+          byId("reviewAuthor").value = author;
+          byId("photoFileName").textContent = "Фото необов’язкове";
+          setReviewRating(0);
+          renderCafeReviews();
+          byId("reviewStatus").textContent = "Збережено на цьому пристрої.";
+        } catch (error) {
+          byId("reviewStatus").textContent = error.message || "Не вдалося зберегти відгук.";
+        } finally {
+          submit.disabled = false;
+        }
+      });
       byId("closeCard").addEventListener("click", closeCafeCard);
       byId("visitToggle").addEventListener("click", () => {
         if (!selectedCafe) return;
@@ -804,16 +1150,10 @@
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
-      cityFocusLayer = L.layerGroup().addTo(map);
+      cityMaskLayer = L.layerGroup().addTo(map);
+      cityBoundaryLayer = L.layerGroup().addTo(map);
       cafePins = L.layerGroup().addTo(map);
-      map.on("moveend zoomend", () => {
-        drawKyivFocus();
-        drawPins();
-      });
-      if (cityBoundary.length) {
-        keepMapOnKyiv();
-        drawKyivFocus();
-      }
+      map.on("moveend zoomend", scheduleMapDraw);
       byId("zoomIn").addEventListener("click", () => map.zoomIn());
       byId("showKyiv").addEventListener("click", () => map.flyTo(KYIV_CENTER, INITIAL_ZOOM, { duration: .5 }));
 
