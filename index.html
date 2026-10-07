@@ -48,34 +48,41 @@
     .topbar {
       position: fixed;
       z-index: 500;
-      top: 14px;
+      top: 10px;
       left: 18px;
       right: 18px;
-      height: 48px;
+      height: 54px;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 10px;
       padding: 0;
       pointer-events: none;
     }
 
     .brand {
-      flex: 0 0 56px;
-      height: 56px;
+      position: relative;
+      flex: 0 0 54px;
+      height: 68px;
       display: flex;
       align-items: center;
       justify-content: center;
       text-decoration: none;
       pointer-events: auto;
-      border: 1px solid rgba(93, 61, 46, .18);
-      border-radius: 14px;
+    }
+    .brand::before {
+      content: "";
+      position: absolute;
+      inset: -3px;
       background: #f4f0e7;
-      box-shadow: 0 4px 14px rgba(58, 39, 28, .16);
+      clip-path: polygon(50% 0, 63% 1%, 76% 4%, 87% 10%, 95% 19%, 100% 30%, 99% 41%, 95% 52%, 87% 63%, 78% 74%, 68% 84%, 58% 94%, 50% 100%, 42% 94%, 32% 84%, 22% 74%, 13% 63%, 5% 52%, 1% 41%, 0 30%, 5% 19%, 13% 10%, 24% 4%, 37% 1%);
+      filter: drop-shadow(0 4px 7px rgba(58, 39, 28, .22));
     }
     .brand-logo {
+      position: relative;
+      z-index: 1;
       display: block;
-      width: 44px;
-      height: 52px;
+      width: 49px;
+      height: 65px;
       object-fit: contain;
     }
 
@@ -154,22 +161,21 @@
     .clear-search.visible { display: block; }
 
     .map-filters {
-      position: fixed;
-      z-index: 450;
-      bottom: 22px;
-      left: 22px;
+      position: static;
+      flex: 0 0 auto;
       display: flex;
       gap: 3px;
-      padding: 4px;
+      padding: 3px;
       border: 1px solid rgba(255, 253, 248, .9);
-      border-radius: 12px;
+      border-radius: 11px;
       background: rgba(255, 253, 248, .94);
-      box-shadow: 0 6px 20px rgba(58, 39, 28, .12);
+      box-shadow: 0 4px 12px rgba(58, 39, 28, .1);
       backdrop-filter: blur(14px);
+      pointer-events: auto;
     }
     .filter {
       min-height: 34px;
-      padding: 0 13px;
+      padding: 0 11px;
       border: 0;
       border-radius: 9px;
       color: #81756a;
@@ -178,33 +184,10 @@
     }
     .filter.active { color: #fffaf2; background: var(--roast); }
 
-    .map-buttons {
-      position: fixed;
-      z-index: 450;
-      right: 22px;
-      bottom: 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .map-button {
-      width: 40px;
-      height: 40px;
-      display: grid;
-      place-items: center;
-      border: 1px solid rgba(255, 253, 248, .9);
-      border-radius: 11px;
-      color: var(--roast);
-      background: rgba(255, 253, 248, .94);
-      box-shadow: 0 5px 16px rgba(58, 39, 28, .12);
-      backdrop-filter: blur(12px);
-    }
-    .map-button svg { width: 17px; height: 17px; }
-
     .cafe-card {
       position: fixed;
       z-index: 460;
-      right: 74px;
+      right: 22px;
       bottom: 22px;
       width: 360px;
       max-height: min(78vh, 650px);
@@ -310,9 +293,9 @@
     .review-textarea:focus { border-color: #afa089; }
     .rating-field { margin: 0; padding: 0; border: 0; }
     .rating-field legend { margin-bottom: 5px; color: var(--muted); font-size: 10px; }
-    .bean-rating { display: flex; gap: 8px; }
+    .bean-rating { display: flex; gap: 0; }
     .bean-score {
-      width: 30px;
+      width: 25px;
       height: 30px;
       display: grid;
       place-items: center;
@@ -322,19 +305,19 @@
       color: #d6cbbc;
       background: transparent;
     }
-    .bean-score svg { width: 21px; height: 21px; }
+    .bean-score svg { width: 22px; height: 22px; }
     .bean-score.active,
     .bean-score:hover { color: #5d3d2e; }
     .drink-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
     .drink-option {
       position: relative;
       min-width: 0;
-      min-height: 76px;
+      min-height: 89px;
       display: grid;
-      grid-template-rows: 45px auto;
+      grid-template-rows: 58px auto;
       justify-items: center;
       align-items: center;
-      padding: 5px 3px 6px;
+      padding: 4px 3px 6px;
       border: 1px solid #e7dfd4;
       border-radius: 10px;
       color: var(--clay);
@@ -346,7 +329,7 @@
     .drink-option.selected { border-color: #815e48; background: #eee5d9; box-shadow: inset 0 0 0 1px rgba(129, 94, 72, .12); }
     .drink-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
     .drink-option:focus-within { outline: 2px solid #afa089; outline-offset: 2px; }
-    .drink-art { width: 43px; height: 43px; overflow: visible; }
+    .drink-art { display: block; width: 62px; height: 58px; object-fit: contain; }
     .drink-name { color: var(--espresso); font-size: 9px; line-height: 1.1; text-align: center; }
     .review-extras { display: flex; align-items: center; justify-content: space-between; min-height: 66px; }
     .decaf-option {
@@ -378,13 +361,15 @@
     .price-caption { font-size: 8px; line-height: 1; }
     .price-circle input {
       width: 48px;
+      height: 22px;
       min-height: 22px;
       padding: 0;
       border: 0;
       outline: 0;
       color: var(--espresso);
       background: transparent;
-      font: 600 14px/1 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: block;
+      font: 600 14px/22px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       text-align: center;
       appearance: textfield;
     }
@@ -435,22 +420,28 @@
 
     @media (max-width: 700px) {
       .topbar {
-        top: 10px;
+        top: 8px;
         left: 10px;
         right: 10px;
-        height: 46px;
-        gap: 10px;
+        height: 50px;
+        gap: 7px;
       }
-      .brand { width: 46px; height: 46px; flex: 0 0 46px; border-radius: 12px; }
-      .brand-logo { width: 36px; height: 42px; }
-      .search-control.open { flex-basis: min(290px, calc(100vw - 96px)); width: min(290px, calc(100vw - 96px)); }
-      .map-filters {
-        left: 12px;
-        right: 12px;
-        bottom: calc(12px + env(safe-area-inset-bottom));
+      .brand { width: 46px; height: 60px; flex-basis: 46px; }
+      .brand::before { inset: -3px; }
+      .brand-logo { width: 42px; height: 57px; }
+      .map-filters { gap: 2px; padding: 2px; }
+      .filter { min-height: 32px; padding: 0 8px; font-size: 10px; }
+      .search-control.open {
+        position: absolute;
+        top: 50%;
+        left: 50px;
+        right: 0;
+        z-index: 5;
+        width: auto;
+        height: 42px;
+        margin: 0;
+        transform: translateY(-50%);
       }
-      .filter { flex: 1; }
-      .map-buttons { right: 12px; bottom: 68px; }
       .cafe-card {
         left: 10px;
         right: 10px;
@@ -474,6 +465,11 @@
       <img class="brand-logo" src="./de-caf-logo.png" alt="de caf">
     </a>
 
+    <nav class="map-filters" aria-label="Фільтр кав’ярень">
+      <button class="filter active" data-filter="all">Усі</button>
+      <button class="filter" data-filter="visited">Відвідані</button>
+    </nav>
+
     <div class="search-control" id="searchControl">
       <input id="search" type="search" placeholder="Кав’ярня" autocomplete="off" aria-label="Пошук кав’ярні">
       <button class="clear-search" id="clearSearch" type="button" aria-label="Очистити пошук">×</button>
@@ -484,20 +480,6 @@
       </button>
     </div>
   </header>
-
-  <nav class="map-filters" aria-label="Фільтр кав’ярень">
-    <button class="filter active" data-filter="all">Усі</button>
-    <button class="filter" data-filter="visited">Відвідані</button>
-  </nav>
-
-  <div class="map-buttons">
-    <button class="map-button" id="zoomIn" aria-label="Збільшити мапу">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.8" cy="10.8" r="6.5"/><path d="M10.8 7.5v6.6M7.5 10.8h6.6M16 16l4 4"/></svg>
-    </button>
-    <button class="map-button" id="showKyiv" aria-label="Показати весь Київ">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="7.2"/><circle cx="12" cy="12" r="2.4"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22"/></svg>
-    </button>
-  </div>
 
   <section class="cafe-card" id="cafeCard" aria-live="polite">
     <div class="cafe-card-head">
@@ -524,36 +506,36 @@
           <input id="reviewRating" name="rating" type="hidden">
         </fieldset>
         <fieldset class="rating-field">
-          <legend>Напій</legend>
-          <div class="drink-picker" role="radiogroup" aria-label="Обрати напій">
+          <legend>Спробувала</legend>
+          <div class="drink-picker" aria-label="Напої, які куштувала">
             <label class="drink-option">
-              <input type="radio" name="drink" value="Фільтр" required>
-              <svg class="drink-art" viewBox="0 0 48 48" aria-hidden="true"><path d="M15 7h18l-2.2 29.5a4 4 0 0 1-4 3.5h-5.6a4 4 0 0 1-4-3.5L15 7Z" fill="#e9dfd1" stroke="#5d3d2e" stroke-width="1.7"/><path d="m17.1 20.5 13.8-.2-1 14.5a2.5 2.5 0 0 1-2.5 2.2h-6.1a2.5 2.5 0 0 1-2.5-2.2l-1.7-14.3Z" fill="#815e48"/><path d="M14 7h20M17 14h14" fill="none" stroke="#5d3d2e" stroke-width="1.7" stroke-linecap="round"/><path d="M22 4h4" stroke="#afa089" stroke-width="2" stroke-linecap="round"/></svg>
+              <input type="checkbox" name="drink" value="Фільтр">
+              <img class="drink-art" src="./assets/drinks/filter.svg" alt="" draggable="false">
               <span class="drink-name">Фільтр</span>
             </label>
             <label class="drink-option">
-              <input type="radio" name="drink" value="Лате">
-              <svg class="drink-art" viewBox="0 0 48 48" aria-hidden="true"><path d="M13 8h22l-2 31H15L13 8Z" fill="#e8dfd1" stroke="#5d3d2e" stroke-width="1.7"/><path d="m14.2 22 19.6-.2-.8 13.4H15.2L14.2 22Z" fill="#bdbaa9"/><path d="m14.6 18.5 20-.2-.6 5.2-19 .2-.4-5.2Z" fill="#815e48"/><path d="M13 8h22M18 13h12" fill="none" stroke="#5d3d2e" stroke-width="1.7" stroke-linecap="round"/><path d="M20 29c2.2-2.5 5.8-2.5 8 0-2.2 2.5-5.8 2.5-8 0Z" fill="#f4f0e7" opacity=".9"/></svg>
+              <input type="checkbox" name="drink" value="Лате">
+              <img class="drink-art" src="./assets/drinks/latte.png" alt="" draggable="false">
               <span class="drink-name">Лате</span>
             </label>
             <label class="drink-option">
-              <input type="radio" name="drink" value="Капучино">
-              <svg class="drink-art" viewBox="0 0 48 48" aria-hidden="true"><path d="M10 19h25l-2.2 17a4 4 0 0 1-4 3.5h-9.6a4 4 0 0 1-4-3.5L10 19Z" fill="#e9dfd1" stroke="#5d3d2e" stroke-width="1.7"/><path d="M35 22h3a5 5 0 0 1 0 10h-5" fill="none" stroke="#5d3d2e" stroke-width="1.7"/><ellipse cx="22.5" cy="19" rx="12.5" ry="5" fill="#f4f0e7" stroke="#5d3d2e" stroke-width="1.7"/><path d="M22 17c2-2 5-1 5 1.1 0 2.5-4.7 3.2-7 1.3-2.1-1.7-.3-4 2-4" fill="none" stroke="#815e48" stroke-width="1.4" stroke-linecap="round"/></svg>
+              <input type="checkbox" name="drink" value="Капучино">
+              <img class="drink-art" src="./assets/drinks/cappuccino.png" alt="" draggable="false">
               <span class="drink-name">Капучино</span>
             </label>
             <label class="drink-option">
-              <input type="radio" name="drink" value="Флет вайт">
-              <svg class="drink-art" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 21h29l-2.5 13a5 5 0 0 1-4.9 4H15.4a5 5 0 0 1-4.9-4L8 21Z" fill="#e9dfd1" stroke="#5d3d2e" stroke-width="1.7"/><path d="M37 23h2a4.5 4.5 0 0 1 0 9h-5" fill="none" stroke="#5d3d2e" stroke-width="1.7"/><ellipse cx="22.5" cy="21" rx="14.5" ry="5.2" fill="#f4f0e7" stroke="#5d3d2e" stroke-width="1.7"/><path d="M23 24c-1-3 0-5 1-6 1 1 2 3 1 6m-1-2-4-2m4 2 4-2m-4 2-3 3m3-3 3 3" fill="none" stroke="#815e48" stroke-width="1.3" stroke-linecap="round"/></svg>
+              <input type="checkbox" name="drink" value="Флет вайт">
+              <img class="drink-art" src="./assets/drinks/flat-white.png" alt="" draggable="false">
               <span class="drink-name">Флет вайт</span>
             </label>
             <label class="drink-option">
-              <input type="radio" name="drink" value="Американо">
-              <svg class="drink-art" viewBox="0 0 48 48" aria-hidden="true"><path d="M10 15h25l-2.2 21a4 4 0 0 1-4 3.5h-9.6a4 4 0 0 1-4-3.5L13 15Z" fill="#e9dfd1" stroke="#5d3d2e" stroke-width="1.7"/><path d="M35 19h2.5a5 5 0 0 1 0 10h-4" fill="none" stroke="#5d3d2e" stroke-width="1.7"/><ellipse cx="22.5" cy="15" rx="12.5" ry="4.4" fill="#815e48" stroke="#5d3d2e" stroke-width="1.7"/><path d="M18 14.7c2-.9 7.5-.9 9.5 0" fill="none" stroke="#c49b73" stroke-width="1.2" stroke-linecap="round"/></svg>
+              <input type="checkbox" name="drink" value="Американо">
+              <img class="drink-art" src="./assets/drinks/americano.png" alt="" draggable="false">
               <span class="drink-name">Американо</span>
             </label>
             <label class="drink-option">
-              <input type="radio" name="drink" value="Еспресо">
-              <svg class="drink-art" viewBox="0 0 48 48" aria-hidden="true"><path d="M12 23h24l-1.8 12a4 4 0 0 1-4 3.4h-12a4 4 0 0 1-4-3.4L12 23Z" fill="#e9dfd1" stroke="#5d3d2e" stroke-width="1.7"/><path d="M36 25h2a4 4 0 0 1 0 8h-3" fill="none" stroke="#5d3d2e" stroke-width="1.7"/><ellipse cx="24" cy="23" rx="12" ry="4.3" fill="#5d3d2e" stroke="#5d3d2e" stroke-width="1.7"/><path d="M19 22.5c2-1.1 8-1.1 10 0" fill="none" stroke="#c49b73" stroke-width="1.2" stroke-linecap="round"/><path d="M9 40h30" stroke="#815e48" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <input type="checkbox" name="drink" value="Еспресо">
+              <img class="drink-art" src="./assets/drinks/espresso.png" alt="" draggable="false">
               <span class="drink-name">Еспресо</span>
             </label>
           </div>
@@ -971,7 +953,8 @@
             return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="' + color + '"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg>';
           }).join("");
 
-          const details = [review.drink, review.decaf ? "декаф" : "", review.price != null ? review.price + " грн" : ""].filter(Boolean);
+          const drinks = Array.isArray(review.drinks) ? review.drinks : (review.drink ? [review.drink] : []);
+          const details = [...drinks, review.decaf ? "декаф" : "", review.price != null ? review.price + " грн" : ""].filter(Boolean);
           const meta = document.createElement("p");
           meta.className = "review-meta";
           meta.textContent = details.join(" · ");
@@ -1115,7 +1098,10 @@
 
       document.querySelectorAll('input[name="drink"]').forEach((input) => {
         input.addEventListener("change", () => {
-          document.querySelectorAll(".drink-option").forEach((option) => option.classList.toggle("selected", option.contains(input) && input.checked));
+          document.querySelectorAll(".drink-option").forEach((option) => {
+            const drinkInput = option.querySelector('input[name="drink"]');
+            option.classList.toggle("selected", Boolean(drinkInput && drinkInput.checked));
+          });
         });
       });
       document.querySelectorAll(".bean-score").forEach((button) => {
@@ -1134,6 +1120,11 @@
           byId("reviewStatus").textContent = "Обери оцінку від 1 до 5 зерняток.";
           return;
         }
+        const drinks = Array.from(document.querySelectorAll('input[name="drink"]:checked'), (input) => input.value);
+        if (!drinks.length) {
+          byId("reviewStatus").textContent = "Обери хоча б один напій.";
+          return;
+        }
         if (!byId("reviewForm").reportValidity()) return;
 
         const submit = byId("submitReview");
@@ -1145,7 +1136,7 @@
             cafeId: selectedCafe.id,
             cafeName: selectedCafe.name,
             rating,
-            drink: document.querySelector('input[name="drink"]:checked')?.value || "",
+            drinks,
             decaf: byId("reviewDecaf").checked,
             price: byId("reviewPrice").value === "" ? null : Number(byId("reviewPrice").value),
             text: byId("reviewText").value.trim(),
@@ -1210,9 +1201,6 @@
       cityBoundaryLayer = L.layerGroup().addTo(map);
       cafePins = L.layerGroup().addTo(map);
       map.on("moveend zoomend", scheduleMapDraw);
-      byId("zoomIn").addEventListener("click", () => map.zoomIn());
-      byId("showKyiv").addEventListener("click", () => map.flyTo(KYIV_CENTER, INITIAL_ZOOM, { duration: .5 }));
-
       loadCafes();
     })();
   </script>
