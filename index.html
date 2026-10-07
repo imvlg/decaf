@@ -3,745 +3,706 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f4f0e7">
+  <meta name="theme-color" content="#efe9de">
   <title>de caf</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
   <style>
     :root {
-      --espresso: #3b271f;
+      --ink: #2b1d16;
       --roast: #5d3d2e;
-      --clay: #815e48;
+      --clay: #8a6a55;
+      --muted: #8f8378;
+      --faint: #ddd2c4;
       --cream: #f4f0e7;
-      --paper: #fffdf8;
-      --muted: #82766c;
-      --line: rgba(84, 61, 45, .15);
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--espresso);
+      --paper: #fbf8f2;
+      --tint: rgba(93, 61, 46, .06);
+      --line: rgba(59, 39, 31, .09);
+      --shadow: 0 18px 40px -14px rgba(43, 29, 22, .35), 0 2px 8px rgba(43, 29, 22, .08);
+      --ease: cubic-bezier(.2, .8, .2, 1);
+      --spring: cubic-bezier(.34, 1.4, .64, 1);
+      --gap: 16px;
+      font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
     }
 
     * { box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-    body { background: var(--cream); }
-    button, input { font: inherit; }
-    button { cursor: pointer; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #ebe5d9; }
+    button, input, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    svg { display: block; }
 
-    #map {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      background: #bdbaa9;
-    }
-
-    .leaflet-container { background: #bdbaa9; }
-    .leaflet-tile-pane { filter: sepia(.46) saturate(.62) hue-rotate(-5deg) brightness(1.02); }
-    .leaflet-control-zoom { display: none; }
+    /* ---------- map ---------- */
+    #map { position: fixed; inset: 0; z-index: 0; background: #ebe5d9; }
+    .leaflet-container { background: #ebe5d9; font-family: inherit; }
+    .leaflet-tile-pane { filter: sepia(.38) saturate(.85) brightness(1.01) contrast(.97); }
     .leaflet-control-attribution {
-      padding: 3px 7px !important;
-      border-radius: 7px 0 0;
-      background: rgba(255, 253, 248, .82) !important;
-      color: #776c60 !important;
+      margin: 0 8px 6px 0 !important;
+      padding: 2px 8px !important;
+      border-radius: 8px;
+      background: rgba(251, 248, 242, .7) !important;
+      color: var(--muted) !important;
       font-size: 9px !important;
       backdrop-filter: blur(8px);
     }
-    .leaflet-control-attribution a { color: var(--roast) !important; }
+    .leaflet-control-attribution a { color: var(--clay) !important; }
 
-    .topbar {
-      position: fixed;
-      z-index: 500;
-      top: 10px;
-      left: 18px;
-      right: 18px;
-      min-height: 60px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 5px 9px;
-      border: 1px solid rgba(93, 61, 46, .14);
-      border-radius: 19px;
-      background: rgba(248, 245, 238, .95);
-      box-shadow: 0 8px 28px rgba(58, 39, 28, .14);
-      backdrop-filter: blur(16px);
-      pointer-events: none;
+    .glass {
+      background: rgba(251, 248, 242, .84);
+      border: 1px solid rgba(255, 255, 255, .55);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px) saturate(1.25);
+      -webkit-backdrop-filter: blur(18px) saturate(1.25);
     }
 
     .brand {
-      flex: 0 0 43px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      pointer-events: auto;
-    }
-    .brand-logo {
-      display: block;
-      width: 42px;
-      height: 48px;
-      object-fit: contain;
-    }
-
-    .search-control {
-      position: relative;
-      flex: 0 0 42px;
-      width: 42px;
-      height: 42px;
-      margin-left: auto;
-      pointer-events: auto;
-      transition: width .24s ease, flex-basis .24s ease;
-    }
-    .search-control.open { flex-basis: min(360px, 70vw); width: min(360px, 70vw); }
-    .search-icon {
-      width: 18px;
-      height: 18px;
-      color: #8a7c70;
-      pointer-events: none;
-    }
-    .search-toggle {
-      position: absolute;
-      z-index: 2;
-      top: 0;
-      right: 0;
-      width: 42px;
-      height: 42px;
-      padding: 0;
-      display: grid;
-      place-items: center;
-      border: 0;
-      border-radius: 50%;
-      color: var(--roast);
-      background: transparent;
-      transition: background .2s ease;
-    }
-    .search-toggle:hover { background: rgba(248, 245, 238, .45); }
-    .search-control.open .search-toggle {
-      background: transparent;
-    }
-    #search {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 42px;
-      padding: 0 82px 0 16px;
-      border: 1px solid rgba(93, 61, 46, .22);
-      border-radius: 999px;
-      outline: none;
-      color: var(--espresso);
-      background: #bdbaa9;
-      font-size: 12px;
-      box-shadow: 0 4px 14px rgba(58, 39, 28, .12);
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transform: scaleX(.08);
-      transform-origin: right center;
-      transition: opacity .18s ease, transform .24s ease;
-    }
-    .search-control.open #search { opacity: 1; visibility: visible; pointer-events: auto; transform: scaleX(1); }
-    #search::placeholder { color: #9a8e82; }
-    #search:focus { border-color: #5d3d2e; box-shadow: 0 4px 14px rgba(58, 39, 28, .16); }
-    .clear-search {
-      position: absolute;
-      z-index: 3;
-      top: 8px;
-      right: 44px;
-      display: none;
-      width: 26px;
-      height: 26px;
-      border: 0;
-      border-radius: 50%;
-      color: var(--clay);
-      background: #eee8dd;
-    }
-    .clear-search.visible { display: block; }
-
-    .map-filters {
-      position: static;
-      flex: 0 0 auto;
-      display: flex;
-      gap: 2px;
-      padding: 3px;
-      border: 0;
-      border-radius: 999px;
-      background: #e9e2d6;
-      pointer-events: auto;
-    }
-    .filter {
-      min-height: 34px;
-      padding: 0 11px;
-      border: 0;
-      border-radius: 9px;
-      color: #81756a;
-      background: transparent;
-      font-size: 11px;
-    }
-    .filter.active { color: #fffaf2; background: var(--roast); }
-
-    .reviews-toggle {
-      min-height: 36px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 0 10px;
-      border: 1px solid rgba(93, 61, 46, .14);
-      border-radius: 999px;
-      color: var(--roast);
-      background: rgba(255, 253, 248, .76);
-      font-size: 10px;
-      white-space: nowrap;
-      pointer-events: auto;
-    }
-    .reviews-toggle svg { width: 14px; height: 14px; }
-    .reviews-toggle[aria-expanded="true"] { color: #fffaf2; border-color: var(--roast); background: var(--roast); }
-
-    .cafe-card {
       position: fixed;
-      z-index: 460;
-      right: 22px;
-      bottom: 22px;
-      width: 360px;
-      max-height: min(82vh, 690px);
-      display: none;
-      padding: 18px;
-      border: 1px solid rgba(93, 61, 46, .12);
-      border-radius: 21px;
-      background: rgba(248, 245, 238, .98);
-      box-shadow: 0 18px 50px rgba(45, 30, 22, .24), inset 0 1px rgba(255, 255, 255, .74);
-      backdrop-filter: blur(16px);
-      overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: #c8b6a2 transparent;
-    }
-    .cafe-card.open { display: block; }
-    .cafe-card-head { display: flex; align-items: flex-start; gap: 12px; }
-    .cafe-title {
-      min-width: 0;
-      flex: 1;
-      margin: 0;
-      color: var(--espresso);
-      font: 20px/1.15 Georgia, "Times New Roman", serif;
-    }
-    .cafe-address { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
-    .close-card {
-      width: 26px;
-      height: 26px;
+      z-index: 500;
+      top: calc(16px + env(safe-area-inset-top));
+      left: 16px;
+      width: 56px;
+      height: 56px;
       display: grid;
       place-items: center;
-      flex: 0 0 26px;
+      border-radius: 18px;
+      animation: drop .6s var(--ease) both;
+      transition: transform .3s var(--spring);
+    }
+    .brand:hover { transform: scale(1.05) rotate(-3deg); }
+    .brand img { width: 40px; height: 46px; object-fit: contain; }
+
+    .dock {
+      position: fixed;
+      z-index: 500;
+      top: calc(16px + env(safe-area-inset-top));
+      right: 16px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px;
+      border-radius: 20px;
+      animation: drop .6s .08s var(--ease) both;
+    }
+    .dock-btn {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 14px;
+      color: var(--roast);
+      background: transparent;
+      transition: background .2s var(--ease), color .2s var(--ease), transform .2s var(--spring);
+    }
+    .dock-btn svg { width: 20px; height: 20px; }
+    .dock-btn:hover { background: var(--tint); }
+    .dock-btn:active { transform: scale(.92); }
+    .dock-btn[aria-pressed="true"],
+    .dock-btn[aria-expanded="true"] { color: var(--cream); background: var(--roast); }
+    .dock-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--clay);
+      box-shadow: 0 0 0 2px var(--paper);
+      transform: scale(0);
+      transition: transform .3s var(--spring);
+    }
+    .dock-badge.on { transform: scale(1); }
+
+    .search {
+      position: relative;
+      width: 0;
+      overflow: hidden;
+      transition: width .4s var(--ease), margin .4s var(--ease);
+    }
+    .search.open { width: clamp(120px, calc(100vw - 260px), 260px); margin-right: 2px; }
+    .search input {
+      width: 100%;
+      height: 44px;
+      padding: 0 34px 0 14px;
+      border: 0;
+      border-radius: 14px;
+      outline: none;
+      background: var(--tint);
+      font-size: 14px;
+    }
+    .search input::placeholder { color: var(--muted); }
+    .search input::-webkit-search-cancel-button { display: none; }
+    .search-clear {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      padding: 0;
       border: 0;
       border-radius: 50%;
       color: var(--muted);
-      background: #f0ebe2;
-      font-size: 15px;
+      background: transparent;
+      opacity: 0;
+      transform: translateY(-50%) scale(.6);
+      transition: opacity .2s, transform .25s var(--spring);
+      pointer-events: none;
     }
-    .visit-toggle {
+    .search-clear svg { width: 14px; height: 14px; }
+    .search-clear.on { opacity: 1; transform: translateY(-50%) scale(1); pointer-events: auto; }
+
+    .status {
+      position: fixed;
+      z-index: 500;
+      left: 50%;
+      bottom: calc(24px + env(safe-area-inset-bottom));
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px 10px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      visibility: hidden;
+      transform: translate(-50%, 12px);
+      transition: opacity .3s var(--ease), transform .4s var(--spring), visibility 0s .4s;
+    }
+    .status.on { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition-delay: 0s; }
+    .status-bean { width: 18px; height: 18px; color: var(--roast); }
+    .status.loading .status-bean { animation: spin 1.1s linear infinite; }
+    .status-retry {
+      width: 30px;
+      height: 30px;
+      display: none;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      color: var(--cream);
+      background: var(--roast);
+    }
+    .status-retry svg { width: 15px; height: 15px; }
+    .status.error .status-retry { display: grid; }
+
+    .sheet {
+      position: fixed;
+      z-index: 600;
+      top: calc(90px + env(safe-area-inset-top));
+      right: 16px;
+      width: 380px;
+      max-height: calc(100dvh - 106px);
+      padding: 22px;
+      border-radius: 24px;
+      background: rgba(251, 248, 242, .95);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: var(--faint) transparent;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px) scale(.97);
+      transform-origin: top right;
+      transition: opacity .22s var(--ease), transform .3s var(--ease), visibility 0s .3s;
+    }
+    .sheet.open {
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+      transition: opacity .25s var(--ease), transform .5s var(--spring), visibility 0s;
+    }
+
+    .sheet-head { display: flex; align-items: flex-start; gap: 8px; }
+    .sheet-title { min-width: 0; flex: 1; padding-top: 4px; }
+    .sheet-title h1, .sheet-title h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.15;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      overflow-wrap: anywhere;
+    }
+    .sheet-title p { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .sheet-title .count { color: var(--muted); font-weight: 500; }
+
+    .icon-btn {
+      flex: 0 0 auto;
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      color: var(--roast);
+      background: var(--tint);
+      transition: background .2s var(--ease), color .2s var(--ease), transform .2s var(--spring);
+    }
+    .icon-btn svg { width: 18px; height: 18px; }
+    .icon-btn:hover { background: rgba(93, 61, 46, .11); }
+    .icon-btn:active { transform: scale(.9); }
+    .icon-btn[aria-pressed="true"] { color: var(--cream); background: var(--roast); }
+
+    .review-list { display: grid; gap: 10px; margin-top: 20px; }
+    .review {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .55);
+      animation: rise .45s var(--ease) both;
+      animation-delay: calc(var(--i, 0) * 45ms);
+    }
+    .review-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .review-cafe { margin: 0 0 8px; font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
+    .review-date { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .beans { display: flex; gap: 1px; }
+    .beans svg { width: 15px; height: 15px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .chips span {
+      padding: 3px 9px;
+      border-radius: 999px;
+      color: var(--clay);
+      background: var(--tint);
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .review-text { margin: 10px 0 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+    .review-photo { display: block; width: 100%; max-height: 220px; margin-top: 12px; border-radius: 12px; object-fit: cover; }
+    .review-open {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      padding: 0;
+      border: 0;
+      color: var(--roast);
+      background: none;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .review-open svg { width: 14px; height: 14px; transition: transform .25s var(--spring); }
+    .review-open:hover svg { transform: translateX(3px); }
+    .empty {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      padding: 22px 0 6px;
+      color: var(--muted);
+      font-size: 13px;
+      animation: rise .4s var(--ease) both;
+    }
+    .empty svg { width: 28px; height: 28px; color: var(--faint); transform: rotate(-24deg); }
+
+    .add-review {
       width: 100%;
-      min-height: 39px;
-      margin-top: 15px;
+      height: 48px;
+      margin-top: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      border: 1px solid #d9cabb;
-      border-radius: 10px;
-      color: var(--roast);
-      background: #f6f1e8;
-      font-size: 11px;
+      border: 0;
+      border-radius: 16px;
+      color: var(--cream);
+      background: var(--roast);
+      font-size: 14px;
       font-weight: 600;
+      transition: background .25s var(--ease), color .25s var(--ease), transform .2s var(--spring);
     }
-    .visit-toggle.visited { border-color: #746d55; color: #fffaf2; background: #746d55; }
-    .visit-toggle svg { width: 14px; height: 14px; }
+    .add-review svg { width: 18px; height: 18px; transition: transform .4s var(--spring); }
+    .add-review:active { transform: scale(.98); }
+    .add-review[aria-expanded="true"] { color: var(--roast); background: var(--tint); }
+    .add-review[aria-expanded="true"] svg { transform: rotate(45deg); }
 
-    .review-section,
-    .review-form {
-      margin-top: 15px;
-      padding-top: 14px;
-      border-top: 1px solid var(--line);
-    }
-    .review-section h2,
-    .review-form h2 {
-      margin: 0 0 10px;
-      color: var(--espresso);
-      font: 16px/1.2 Georgia, "Times New Roman", serif;
-    }
-    .review-list { display: grid; gap: 9px; }
-    .review-empty,
-    .storage-note {
-      margin: 0;
-      color: var(--muted);
-      font-size: 10px;
-      line-height: 1.5;
-    }
-    .review-item {
-      padding: 12px;
-      border: 1px solid rgba(93, 61, 46, .08);
-      border-radius: 13px;
-      background: rgba(255, 253, 248, .78);
-      box-shadow: 0 3px 10px rgba(58, 39, 28, .035);
-    }
-    .review-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .review-date { color: var(--muted); font-size: 9px; }
-    .review-beans { display: inline-flex; gap: 2px; margin-top: 4px; color: #815e48; }
-    .review-beans svg { width: 13px; height: 13px; }
-    .review-meta { margin: 5px 0 0; color: var(--clay); font-size: 10px; }
-    .review-text { margin: 6px 0 0; color: var(--espresso); font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
-    .review-photo { display: block; width: 100%; max-height: 190px; margin-top: 8px; border-radius: 8px; object-fit: cover; }
-    .review-fields { display: grid; gap: 11px; }
-    .review-label { display: grid; gap: 5px; color: var(--muted); font-size: 10px; }
-    .review-input,
-    .review-textarea {
-      width: 100%;
-      min-height: 36px;
-      padding: 8px 10px;
-      border: 1px solid #e2d9cd;
-      border-radius: 8px;
-      outline: none;
-      color: var(--espresso);
-      background: #fffdf8;
-      font-family: inherit;
-      font-size: 11px;
-      line-height: 1.35;
-    }
-    .review-textarea { min-height: 68px; resize: vertical; }
-    .review-input:focus,
-    .review-textarea:focus { border-color: #afa089; }
-    .rating-field { margin: 0; padding: 0; border: 0; }
-    .rating-field legend { margin-bottom: 5px; color: var(--muted); font-size: 10px; }
-    .bean-rating { display: flex; gap: 0; }
+    .collapse { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s var(--ease); }
+    .collapse.open { grid-template-rows: 1fr; }
+    .collapse-inner { min-height: 0; overflow: hidden; }
+    .collapse-inner > form { opacity: 0; transform: translateY(-6px); transition: opacity .25s var(--ease), transform .35s var(--ease); }
+    .collapse.open .collapse-inner > form { opacity: 1; transform: none; transition-delay: .1s; }
+
+    .review-form { display: grid; gap: var(--gap); padding: 18px 2px 2px; }
+
+    .bean-rating { display: flex; justify-content: center; gap: 4px; }
     .bean-score {
-      width: 25px;
-      height: 30px;
+      width: 40px;
+      height: 40px;
       display: grid;
       place-items: center;
       padding: 0;
       border: 0;
-      border-radius: 7px;
-      color: #d6cbbc;
+      border-radius: 12px;
+      color: var(--faint);
       background: transparent;
+      transition: color .15s var(--ease), transform .2s var(--spring);
     }
-    .bean-score svg { width: 22px; height: 22px; }
-    .bean-score.active,
-    .bean-score:hover { color: #5d3d2e; }
-    .drink-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
-    .drink-option {
+    .bean-score svg { width: 28px; height: 28px; }
+    .bean-score.on { color: var(--roast); }
+    .bean-score:active { transform: scale(.85); }
+    @media (hover: hover) {
+      .bean-rating:hover .bean-score { color: var(--clay); }
+      .bean-rating .bean-score:hover ~ .bean-score { color: var(--faint); }
+    }
+
+    .drink-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .drink {
       position: relative;
-      min-width: 0;
-      min-height: 76px;
       display: grid;
-      grid-template-rows: 46px auto;
       justify-items: center;
-      align-items: center;
-      padding: 3px 3px 5px;
-      border: 1px solid #e7dfd4;
-      border-radius: 10px;
-      color: var(--clay);
-      background: #f6f2eb;
+      gap: 4px;
+      padding: 10px 4px 9px;
+      border: 1.5px solid transparent;
+      border-radius: 16px;
+      background: var(--tint);
       cursor: pointer;
-      transition: border-color .16s ease, background .16s ease, transform .16s ease;
+      transition: border-color .2s var(--ease), background .2s var(--ease), transform .25s var(--spring);
     }
-    .drink-option:hover { transform: translateY(-1px); border-color: #c6b5a3; }
-    .drink-option.selected { border-color: #815e48; background: #eee5d9; box-shadow: inset 0 0 0 1px rgba(129, 94, 72, .12); }
-    .drink-option.selected::after {
-      content: "✓";
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      width: 15px;
-      height: 15px;
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
-      color: #fffaf2;
-      background: var(--roast);
-      font-size: 9px;
-      line-height: 1;
-    }
-    .drink-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-    .drink-option:focus-within { outline: 2px solid #afa089; outline-offset: 2px; }
-    .drink-art { display: block; width: 50px; height: 45px; object-fit: contain; }
-    .drink-name { color: var(--espresso); font-size: 9px; line-height: 1.1; text-align: center; }
-    .review-extras { display: flex; align-items: center; justify-content: space-between; min-height: 66px; }
-    .decaf-option {
+    .drink:hover { transform: translateY(-2px); }
+    .drink input { position: absolute; opacity: 0; pointer-events: none; }
+    .drink img { width: 52px; height: 46px; object-fit: contain; transition: transform .35s var(--spring); }
+    .drink span { color: var(--clay); font-size: 11px; font-weight: 500; }
+    .drink:has(input:checked) { border-color: var(--roast); background: rgba(93, 61, 46, .1); }
+    .drink:has(input:checked) img { transform: scale(1.08) rotate(-4deg); }
+    .drink:has(input:checked) span { color: var(--ink); }
+    .drink:has(input:focus-visible) { outline: 2px solid var(--clay); outline-offset: 2px; }
+
+    .extras { display: flex; align-items: center; gap: 8px; }
+    .toggle-chip {
+      height: 44px;
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      padding: 9px 11px;
-      border: 1px solid #e3d9cb;
+      padding: 0 16px;
       border-radius: 999px;
       color: var(--clay);
-      background: #f6f2eb;
-      font-size: 10px;
-      white-space: nowrap;
-    }
-    .decaf-option input { width: 14px; height: 14px; margin: 0; accent-color: #5d3d2e; }
-    .price-circle {
-      position: relative;
-      width: 64px;
-      height: 64px;
-      display: block;
-      border: 1px solid #d9cbbc;
-      border-radius: 50%;
-      color: var(--muted);
-      background: #eee8dc;
-      cursor: text;
-      transition: border-color .15s ease, box-shadow .15s ease;
-    }
-    .price-circle:focus-within { border-color: #815e48; box-shadow: 0 0 0 3px rgba(129, 94, 72, .12); }
-    .price-caption { position: absolute; top: 9px; left: 0; right: 0; font-size: 8px; line-height: 1; text-align: center; }
-    .price-circle input {
-      position: absolute;
-      top: 50%;
-      left: 5px;
-      width: 52px;
-      height: 22px;
-      padding: 0 2px;
-      border: 0;
-      outline: 0;
-      box-shadow: none;
-      color: var(--espresso);
-      background: transparent;
-      font: 600 14px/22px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      text-align: center;
-      transform: translateY(-50%);
-    }
-    .price-currency { position: absolute; bottom: 8px; left: 0; right: 0; font-size: 8px; line-height: 1; text-align: center; }
-
-    .reviews-drawer {
-      position: fixed;
-      z-index: 490;
-      top: 82px;
-      right: 18px;
-      width: min(430px, calc(100vw - 36px));
-      max-height: calc(100dvh - 100px);
-      display: none;
-      padding: 18px;
-      border: 1px solid rgba(93, 61, 46, .12);
-      border-radius: 21px;
-      background: rgba(248, 245, 238, .98);
-      box-shadow: 0 18px 50px rgba(45, 30, 22, .24), inset 0 1px rgba(255, 255, 255, .74);
-      backdrop-filter: blur(16px);
-      overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: #c8b6a2 transparent;
-    }
-    .reviews-drawer.open { display: block; }
-    .reviews-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 13px; }
-    .reviews-drawer-head h2 { margin: 0; color: var(--espresso); font: 20px/1.2 Georgia, "Times New Roman", serif; }
-    .all-review-list { display: grid; gap: 9px; }
-    .all-review-item {
-      padding: 12px;
-      border: 1px solid rgba(93, 61, 46, .08);
-      border-radius: 13px;
-      background: rgba(255, 253, 248, .82);
-    }
-    .all-review-cafe { margin: 0; color: var(--espresso); font-size: 12px; font-weight: 650; }
-    .all-review-date { color: var(--muted); font-size: 9px; }
-    .all-review-open { margin-top: 9px; padding: 5px 9px; border: 1px solid #e0d4c5; border-radius: 999px; color: var(--roast); background: transparent; font-size: 9px; }
-    .all-review-open:hover { background: #f0e9de; }
-    .photo-pick { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; cursor: pointer; }
-    .photo-pick input { display: none; }
-    .photo-button { padding: 7px 10px; border: 1px solid #e2d9cd; border-radius: 8px; color: var(--roast); background: #f4f0e7; }
-    .review-status { min-height: 14px; margin: 0; color: var(--clay); font-size: 10px; }
-    .submit-review {
-      width: 100%;
-      min-height: 38px;
-      border: 0;
-      border-radius: 9px;
-      color: #fffaf2;
-      background: #5d3d2e;
-      font-size: 11px;
+      background: var(--tint);
+      font-size: 13px;
       font-weight: 600;
+      cursor: pointer;
+      transition: background .2s var(--ease), color .2s var(--ease);
     }
-    .submit-review:disabled { opacity: .65; cursor: wait; }
-
-    .pin {
-      width: 30px;
-      height: 30px;
+    .toggle-chip input { position: absolute; opacity: 0; pointer-events: none; }
+    .toggle-chip:has(input:checked) { color: var(--cream); background: var(--roast); }
+    .toggle-chip:has(input:focus-visible) { outline: 2px solid var(--clay); outline-offset: 2px; }
+    .price {
+      flex: 1;
+      min-width: 0;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: var(--tint);
+      transition: box-shadow .2s var(--ease);
+    }
+    .price:focus-within { box-shadow: inset 0 0 0 1.5px var(--clay); }
+    .price input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 14px; font-weight: 600; }
+    .price input::placeholder { color: var(--muted); font-weight: 500; }
+    .price span { color: var(--muted); font-size: 13px; }
+    .photo-btn {
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
       display: grid;
       place-items: center;
-      color: #5d3d2e;
-      filter: drop-shadow(0 2px 3px rgba(53, 36, 26, .32));
-    }
-    .pin.visited { color: #afa089; }
-    .pin svg { width: 27px; height: 27px; transform: rotate(-24deg); }
-    .coffee-marker-wrapper,
-    .cluster-marker-wrapper { border: 0; background: transparent; }
-    .pin.visited svg path:nth-child(2) { stroke: #5d3d2e; }
-    .cluster {
-      width: 36px;
-      height: 36px;
-      display: grid;
-      place-items: center;
-      border: 1px solid #f4f0e7;
       border-radius: 50%;
-      color: #fffaf2;
-      background: #5d3d2e;
-      box-shadow: 0 2px 7px rgba(53, 36, 26, .22);
-      font: 600 12px/1 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--roast);
+      background: var(--tint) center / cover no-repeat;
+      cursor: pointer;
+      transition: transform .25s var(--spring), box-shadow .2s;
+    }
+    .photo-btn:hover { transform: scale(1.06); }
+    .photo-btn input { display: none; }
+    .photo-btn svg { width: 19px; height: 19px; }
+    .photo-btn.has-photo { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--roast); }
+    .photo-btn.has-photo svg { opacity: 0; }
+
+    .review-form textarea {
+      width: 100%;
+      min-height: 92px;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 16px;
+      outline: none;
+      background: var(--tint);
+      font-size: 14px;
+      line-height: 1.5;
+      resize: vertical;
+      transition: box-shadow .2s var(--ease);
+    }
+    .review-form textarea::placeholder { color: var(--muted); }
+    .review-form textarea:focus { box-shadow: inset 0 0 0 1.5px var(--clay); }
+    .form-status { min-height: 16px; margin: -6px 0 -6px; color: var(--clay); font-size: 12px; text-align: center; }
+    .form-status.shake { animation: shake .4s var(--ease); }
+    .submit {
+      height: 48px;
+      border: 0;
+      border-radius: 16px;
+      color: var(--cream);
+      background: var(--ink);
+      font-size: 14px;
+      font-weight: 600;
+      transition: transform .2s var(--spring), opacity .2s;
+    }
+    .submit:active { transform: scale(.98); }
+    .submit:disabled { opacity: .6; cursor: wait; }
+
+    .marker-wrap { border: 0; background: transparent; }
+    .pin {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      color: var(--roast);
+      filter: drop-shadow(0 3px 4px rgba(43, 29, 22, .3));
+      transition: transform .3s var(--spring), color .2s;
+    }
+    .pin svg { width: 26px; height: 26px; transform: rotate(-24deg); }
+    .pin:hover { transform: scale(1.18); }
+    .pin.visited { color: #a89a7e; }
+    .pin.selected { color: var(--ink); transform: scale(1.4); }
+    .cluster {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      border: 2px solid rgba(251, 248, 242, .95);
+      border-radius: 50%;
+      color: var(--cream);
+      background: var(--roast);
+      box-shadow: 0 0 0 5px rgba(93, 61, 46, .16), 0 4px 10px rgba(43, 29, 22, .25);
+      font: 700 12px/1 "Manrope", system-ui, sans-serif;
+      transition: transform .3s var(--spring);
+    }
+    .cluster:hover { transform: scale(1.1); }
+    .pop { animation: pop .5s var(--spring) both; }
+
+    @keyframes pop { from { opacity: 0; transform: scale(.2); } }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+    @keyframes drop { from { opacity: 0; transform: translateY(-12px); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
     }
 
     @media (max-width: 700px) {
-      .topbar {
-        top: 8px;
+      .brand { top: calc(10px + env(safe-area-inset-top)); left: 10px; width: 52px; height: 52px; border-radius: 17px; }
+      .brand img { width: 36px; height: 42px; }
+      .dock { top: calc(10px + env(safe-area-inset-top)); right: 10px; padding: 4px; border-radius: 18px; }
+      .dock-btn { width: 42px; height: 42px; }
+      .search.open { width: calc(100vw - 222px); }
+      .search input { height: 42px; }
+
+      .sheet {
+        top: auto;
         left: 8px;
         right: 8px;
-        min-height: 56px;
-        gap: 5px;
-        padding: 4px 6px;
-        border-radius: 17px;
+        bottom: calc(8px + env(safe-area-inset-bottom));
+        width: auto;
+        max-height: 78dvh;
+        padding: 26px 18px 20px;
+        border-radius: 26px;
+        transform: translateY(32px);
+        transform-origin: bottom center;
       }
-      .brand { flex-basis: 38px; height: 44px; }
-      .brand-logo { width: 38px; height: 44px; }
-      .map-filters { gap: 1px; padding: 2px; }
-      .filter { min-height: 31px; padding: 0 6px; font-size: 9px; }
-      .reviews-toggle { min-height: 33px; gap: 4px; padding: 0 7px; font-size: 9px; }
-      .reviews-toggle svg { width: 13px; height: 13px; }
-      .search-control.open {
+      .sheet::before {
+        content: "";
         position: absolute;
-        top: 50%;
-        left: 7px;
-        right: 7px;
-        z-index: 5;
-        width: auto;
-        height: 42px;
-        margin: 0;
-        transform: translateY(-50%);
+        top: 9px;
+        left: 50%;
+        width: 36px;
+        height: 4px;
+        border-radius: 4px;
+        background: var(--faint);
+        transform: translateX(-50%);
       }
-      .cafe-card {
-        left: 10px;
-        right: 10px;
-        bottom: calc(10px + env(safe-area-inset-bottom));
-        width: auto;
-        max-height: calc(100dvh - 84px);
-        padding: 16px;
-        border-radius: 20px;
-      }
-      .reviews-drawer {
-        top: 74px;
-        left: 10px;
-        right: 10px;
-        width: auto;
-        max-height: calc(100dvh - 86px);
-        padding: 16px;
-        border-radius: 20px;
-      }
+      .sheet-title h1, .sheet-title h2 { font-size: 20px; }
+      .status { bottom: calc(18px + env(safe-area-inset-bottom)); }
     }
   </style>
 </head>
 <body>
   <div id="map" aria-label="Мапа кав’ярень Києва"></div>
 
-  <header class="topbar">
-    <a class="brand" href="#" aria-label="de caf">
-      <img class="brand-logo" src="./de-caf-logo.png" alt="de caf">
-    </a>
+  <a class="brand glass" href="#" aria-label="de caf"><img src="./de-caf-logo.png" alt="de caf"></a>
 
-    <nav class="map-filters" aria-label="Фільтр кав’ярень">
-      <button class="filter active" data-filter="all">Усі</button>
-      <button class="filter" data-filter="visited">Відвідані</button>
-    </nav>
-
-    <button class="reviews-toggle" id="reviewsToggle" type="button" aria-expanded="false" aria-controls="reviewsDrawer">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4.5h12a1.5 1.5 0 0 1 1.5 1.5v13L16 16.5l-4 2.5-4-2.5L4.5 19V6A1.5 1.5 0 0 1 6 4.5Z"/><path d="M8 8.5h8M8 11.5h8"/></svg>
-      Відгуки
-    </button>
-
-    <div class="search-control" id="searchControl">
-      <input id="search" type="search" placeholder="Кав’ярня" autocomplete="off" aria-label="Пошук кав’ярні">
-      <button class="clear-search" id="clearSearch" type="button" aria-label="Очистити пошук">×</button>
-      <button class="search-toggle" id="searchToggle" type="button" aria-label="Відкрити пошук" aria-expanded="false">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-          <circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 4.3 4.3"/>
-        </svg>
+  <nav class="dock glass" aria-label="Керування мапою">
+    <div class="search" id="searchControl">
+      <input id="search" type="search" placeholder="Кав’ярня" autocomplete="off" aria-label="Пошук кав’ярні" tabindex="-1">
+      <button class="search-clear" id="clearSearch" type="button" aria-label="Очистити">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </div>
-  </header>
+    <button class="dock-btn" id="searchToggle" type="button" aria-label="Пошук" aria-expanded="false" title="Пошук">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.4"/><path d="m16 16 4.2 4.2"/></svg>
+    </button>
+    <button class="dock-btn" id="visitedFilter" type="button" aria-label="Лише відвідані" aria-pressed="false" title="Відвідані">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><path d="m8.4 12.2 2.4 2.4 4.8-5"/></svg>
+    </button>
+    <button class="dock-btn" id="reviewsToggle" type="button" aria-label="Мої відгуки" aria-expanded="false" aria-controls="reviewsDrawer" title="Відгуки">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-8l-4.5 3v-3H5A1.5 1.5 0 0 1 3.5 16V7A1.5 1.5 0 0 1 5 5.5Z"/><path d="M8 10h8M8 13h5"/></svg>
+      <span class="dock-badge" id="reviewsBadge"></span>
+    </button>
+  </nav>
 
-  <section class="reviews-drawer" id="reviewsDrawer" aria-label="Усі відгуки">
-    <div class="reviews-drawer-head">
-      <h2>Відгуки</h2>
-      <button class="close-card" id="closeReviews" type="button" aria-label="Закрити відгуки">×</button>
-    </div>
-    <div class="all-review-list" id="allReviewList"></div>
-  </section>
+  <div class="status glass" id="status" role="status">
+    <svg class="status-bean" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="currentColor"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#fbf8f2" stroke-width="1.4" stroke-linecap="round"/></svg>
+    <span id="statusText"></span>
+    <button class="status-retry" id="retry" type="button" aria-label="Повторити">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>
+    </button>
+  </div>
 
-  <section class="cafe-card" id="cafeCard" aria-live="polite">
-    <div class="cafe-card-head">
-      <div><h1 class="cafe-title" id="cafeName"></h1><p class="cafe-address" id="cafeAddress" hidden></p></div>
-      <button class="close-card" id="closeCard" aria-label="Закрити">×</button>
+  <aside class="sheet glass" id="reviewsDrawer" aria-labelledby="drawerTitle">
+    <div class="sheet-head">
+      <div class="sheet-title"><h2 id="drawerTitle">Відгуки <span class="count" id="reviewsCount"></span></h2></div>
+      <button class="icon-btn" id="closeReviews" type="button" aria-label="Закрити">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
+      </button>
     </div>
-    <button class="visit-toggle" id="visitToggle"></button>
-    <section class="review-section" aria-labelledby="reviewListTitle">
-      <h2 id="reviewListTitle">Відгуки</h2>
-      <div class="review-list" id="reviewList"></div>
-    </section>
-    <form class="review-form" id="reviewForm">
-      <h2>Твій відгук</h2>
-      <div class="review-fields">
-        <fieldset class="rating-field">
-          <legend>Оцінка</legend>
-          <div class="bean-rating" id="beanRating" role="group" aria-label="Оцінка від 1 до 5 зерняток">
-            <button class="bean-score" type="button" data-rating="1" aria-label="1 з 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="currentColor"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg></button>
-            <button class="bean-score" type="button" data-rating="2" aria-label="2 з 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="currentColor"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg></button>
-            <button class="bean-score" type="button" data-rating="3" aria-label="3 з 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="currentColor"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg></button>
-            <button class="bean-score" type="button" data-rating="4" aria-label="4 з 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="currentColor"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg></button>
-            <button class="bean-score" type="button" data-rating="5" aria-label="5 з 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="currentColor"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg></button>
-          </div>
-          <input id="reviewRating" name="rating" type="hidden">
-        </fieldset>
-        <fieldset class="rating-field">
-          <legend>Напої</legend>
-          <div class="drink-picker" aria-label="Напої">
-            <label class="drink-option">
-              <input type="checkbox" name="drink" value="Фільтр">
-              <img class="drink-art" src="./assets/drinks/filter.svg" alt="" draggable="false">
-              <span class="drink-name">Фільтр</span>
-            </label>
-            <label class="drink-option">
-              <input type="checkbox" name="drink" value="Лате">
-              <img class="drink-art" src="./assets/drinks/latte.png" alt="" draggable="false">
-              <span class="drink-name">Лате</span>
-            </label>
-            <label class="drink-option">
-              <input type="checkbox" name="drink" value="Капучино">
-              <img class="drink-art" src="./assets/drinks/cappuccino.png" alt="" draggable="false">
-              <span class="drink-name">Капучино</span>
-            </label>
-            <label class="drink-option">
-              <input type="checkbox" name="drink" value="Флет вайт">
-              <img class="drink-art" src="./assets/drinks/flat-white.png" alt="" draggable="false">
-              <span class="drink-name">Флет вайт</span>
-            </label>
-            <label class="drink-option">
-              <input type="checkbox" name="drink" value="Американо">
-              <img class="drink-art" src="./assets/drinks/americano.png" alt="" draggable="false">
-              <span class="drink-name">Американо</span>
-            </label>
-            <label class="drink-option">
-              <input type="checkbox" name="drink" value="Еспресо">
-              <img class="drink-art" src="./assets/drinks/espresso.png" alt="" draggable="false">
-              <span class="drink-name">Еспресо</span>
+    <div class="review-list" id="allReviewList"></div>
+  </aside>
+
+  <aside class="sheet glass" id="cafeCard" aria-labelledby="cafeName">
+    <div class="sheet-head">
+      <div class="sheet-title"><h1 id="cafeName"></h1><p id="cafeAddress" hidden></p></div>
+      <button class="icon-btn" id="visitToggle" type="button" aria-pressed="false" aria-label="Відвідано" title="Відвідано">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 12.5 3.6 3.6 7.4-8"/></svg>
+      </button>
+      <button class="icon-btn" id="closeCard" type="button" aria-label="Закрити">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
+      </button>
+    </div>
+
+    <div class="review-list" id="reviewList"></div>
+
+    <button class="add-review" id="addReview" type="button" aria-expanded="false" aria-controls="formWrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span>Відгук</span>
+    </button>
+
+    <div class="collapse" id="formWrap">
+      <div class="collapse-inner">
+        <form class="review-form" id="reviewForm" novalidate>
+          <div class="bean-rating" id="beanRating" role="radiogroup" aria-label="Оцінка"></div>
+          <div class="drink-picker" id="drinkPicker" role="group" aria-label="Напої"></div>
+          <div class="extras">
+            <label class="toggle-chip"><input id="reviewDecaf" type="checkbox">декаф</label>
+            <label class="price"><input id="reviewPrice" type="text" inputmode="numeric" maxlength="4" placeholder="ціна" aria-label="Ціна, грн"><span>₴</span></label>
+            <label class="photo-btn" id="photoBtn" title="Фото" aria-label="Додати фото">
+              <input id="reviewPhoto" type="file" accept="image/*">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5Z"/><circle cx="12" cy="12.8" r="3.3"/></svg>
             </label>
           </div>
-        </fieldset>
-        <div class="review-extras">
-          <label class="decaf-option"><input id="reviewDecaf" type="checkbox"> Декаф</label>
-          <label class="price-circle" aria-label="Ціна у гривнях">
-            <span class="price-caption">Ціна</span>
-            <input id="reviewPrice" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{1,4}" placeholder="—" aria-label="Сума в гривнях">
-            <span class="price-currency">грн</span>
-          </label>
-        </div>
-        <label class="review-label">Відгук
-          <textarea class="review-textarea" id="reviewText" maxlength="280" placeholder="Текстовий відгук" required></textarea>
-        </label>
-        <label class="photo-pick"><input id="reviewPhoto" type="file" accept="image/*"><span class="photo-button">Додати фото</span><span id="photoFileName">Фото необов’язкове</span></label>
-        <p class="review-status" id="reviewStatus" aria-live="polite"></p>
-        <button class="submit-review" id="submitReview" type="submit">Зберегти відгук</button>
+          <textarea id="reviewText" maxlength="280" placeholder="Кілька слів…" aria-label="Відгук"></textarea>
+          <p class="form-status" id="reviewStatus" aria-live="polite"></p>
+          <button class="submit" id="submitReview" type="submit">Зберегти</button>
+        </form>
       </div>
-    </form>
-    <p class="storage-note">Зараз відгуки зберігаються лише в цьому браузері.</p>
-  </section>
+    </div>
+  </aside>
 
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     (() => {
-      const CAFE_CACHE = "decaf-osm-cafes-v4";
+      const CAFE_CACHE = "decaf-cafes-v5";
+      const BOUNDARY_CACHE = "decaf-boundary-v1";
       const VISITED_KEY = "decaf-visited-v1";
       const REVIEWS_KEY = "decaf-reviews-v1";
       const KYIV_AREA = 3600421866;
       const KYIV_RELATION = 421866;
       const KYIV_CENTER = [50.4501, 30.5234];
+      const CAFE_TTL = 12 * 60 * 60 * 1000;
+      const BOUNDARY_TTL = 30 * 24 * 60 * 60 * 1000;
       const OVERPASS_URLS = [
         "https://overpass-api.de/api/interpreter",
-        "https://lz4.overpass-api.de/api/interpreter",
-        "https://overpass.private.coffee/api/interpreter"
+        "https://overpass.private.coffee/api/interpreter",
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
       ];
-      const CACHE_TTL = 12 * 60 * 60 * 1000;
+      const DRINKS = [
+        ["Фільтр", "./assets/drinks/filter.svg"],
+        ["Лате", "./assets/drinks/latte.png"],
+        ["Капучино", "./assets/drinks/cappuccino.png"],
+        ["Флет вайт", "./assets/drinks/flat-white.png"],
+        ["Американо", "./assets/drinks/americano.png"],
+        ["Еспресо", "./assets/drinks/espresso.png"]
+      ];
+      const BEAN_PATH = "M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z";
+      const bean = (fill = "currentColor") =>
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + BEAN_PATH + '" fill="' + fill + '"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#fbf8f2" stroke-width="1.3" stroke-linecap="round"/></svg>';
+      const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+      const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      const byId = (id) => document.getElementById(id);
-      let cafes = readCafeCache();
-      let cafesCachedAt = readCafeCacheTime();
-      let cityBoundary = readCityBoundaryCache();
-      let visited = readVisited();
-      let reviews = readReviews();
-      let map;
-      let cafePins;
-      let cityMaskLayer;
-      let cityBoundaryLayer;
-      let mapDrawFrame = 0;
+      const $ = (id) => document.getElementById(id);
+      const store = {
+        get(key, fallback) {
+          try { const value = JSON.parse(localStorage.getItem(key)); return value == null ? fallback : value; }
+          catch { return fallback; }
+        },
+        set(key, value) {
+          try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+          catch { return false; }
+        }
+      };
+
+      const cafeCache = store.get(CAFE_CACHE, {});
+      const boundaryCache = store.get(BOUNDARY_CACHE, {});
+      let cafes = Array.isArray(cafeCache.places) ? cafeCache.places : [];
+      let cafesFetchedAt = Number(cafeCache.fetchedAt) || 0;
+      let cityBoundary = Array.isArray(boundaryCache.rings) ? boundaryCache.rings : [];
+      let boundaryFetchedAt = Number(boundaryCache.fetchedAt) || 0;
+      let visited = new Set([].concat(store.get(VISITED_KEY, [])));
+      let reviews = [].concat(store.get(REVIEWS_KEY, []));
+
+      let map, cafePins, maskLayer, boundaryLayer;
       let selectedCafe = null;
-      let activeFilter = "all";
+      let onlyVisited = false;
+      let animateAll = true;
+      const seenPins = new Set();
+      let drawFrame = 0;
 
-      function readCafeCache() {
-        try {
-          const stored = JSON.parse(localStorage.getItem(CAFE_CACHE));
-          return Array.isArray(stored && stored.places) ? stored.places : [];
-        } catch {
-          return [];
+      const LIFECYCLE = ["disused", "abandoned", "vacant", "demolished", "removed", "razed", "destroyed"];
+      const NOT_COFFEE_CUISINE = /ice_cream|frozen_yogurt|bubble_tea|\btea\b|hookah|shisha|pizza|burger|sushi|kebab|shawarma|chicken|hot_dog|fast_food|bbq|noodle|ramen/;
+      const NOT_COFFEE_NAME = /кальян|hookah|shisha|морозив|ice ?cream|gelato|bubble|шаурм|shawarm|піц|pizz|суші|sushi|бургер|burger|чайхан|tea ?house|їдальн|столова|хінкал|вареничн|пельмен/i;
+      const COFFEE_HINT = /coffee|кав|кофе|espresso|еспресо|бариста|barista|roast/i;
+
+      function isOperating(tags) {
+        for (const key in tags) {
+          if (LIFECYCLE.includes(key.split(":")[0])) return false;
         }
+        if (
+          tags.end_date ||
+          tags["cafe:state"] === "closed" ||
+          tags.lifecycle === "closed" ||
+          tags.closed === "yes" ||
+          tags.permanently_closed === "yes" ||
+          tags.access === "private" ||
+          tags.access === "no"
+        ) return false;
+        if (/^\s*(closed|off)\s*$/i.test(tags.opening_hours || "")) return false;
+        if (/закрит|зачинен|\bclosed\b/i.test(tags.name || "")) return false;
+        return true;
       }
 
-      function readCafeCacheTime() {
-        try {
-          const stored = JSON.parse(localStorage.getItem(CAFE_CACHE));
-          return Number(stored && stored.fetchedAt) || 0;
-        } catch {
-          return 0;
-        }
-      }
-
-      function readCityBoundaryCache() {
-        try {
-          const stored = JSON.parse(localStorage.getItem(CAFE_CACHE));
-          return Array.isArray(stored && stored.cityBoundary) ? stored.cityBoundary : [];
-        } catch {
-          return [];
-        }
-      }
-
-      function readVisited() {
-        try {
-          const stored = JSON.parse(localStorage.getItem(VISITED_KEY));
-          return new Set(Array.isArray(stored) ? stored : []);
-        } catch {
-          return new Set();
-        }
-      }
-
-      function readReviews() {
-        try {
-          const stored = JSON.parse(localStorage.getItem(REVIEWS_KEY));
-          return Array.isArray(stored) ? stored : [];
-        } catch {
-          return [];
-        }
-      }
-
-      function saveReviews() {
-        try {
-          localStorage.setItem(REVIEWS_KEY, JSON.stringify(reviews));
-          return true;
-        } catch {
-          return false;
-        }
-      }
-
-      function saveVisited() {
-        localStorage.setItem(VISITED_KEY, JSON.stringify(Array.from(visited)));
-      }
-
-      function placesToShow() {
-        const search = byId("search").value.trim().toLocaleLowerCase("uk");
-        return cafes.filter((cafe) => {
-          const matchesVisit = activeFilter !== "visited" || visited.has(cafe.id);
-          const matchesSearch = !search || (cafe.name + " " + cafe.address).toLocaleLowerCase("uk").includes(search);
-          return matchesVisit && matchesSearch;
-        });
+      function isCoffeePlace(tags, name) {
+        if (tags["drink:coffee"] === "no") return false;
+        if (tags.shisha === "yes" || tags.hookah === "yes" || tags.cafe === "hookah" || tags.cafe === "shisha") return false;
+        const cuisine = (tags.cuisine || "").toLowerCase();
+        const coffeeish = /coffee/.test(cuisine) || tags["drink:coffee"] === "yes" || COFFEE_HINT.test(name);
+        if (coffeeish) return true;
+        if (NOT_COFFEE_CUISINE.test(cuisine)) return false;
+        if (NOT_COFFEE_NAME.test(name)) return false;
+        return true;
       }
 
       function cafeAddress(tags) {
-        const street = tags["addr:street"] || tags["addr:place"] || tags["addr:suburb"] || tags["addr:district"];
+        const street = tags["addr:street"] || tags["addr:place"];
         const number = tags["addr:housenumber"];
         if (street) return street + (number ? ", " + number : "");
         return (tags["addr:full"] || "")
@@ -749,413 +710,466 @@
           .replace(/^[,\s]+|[,\s]+$/g, "");
       }
 
-      function parseCafeData(elements) {
+      function parseCafes(elements) {
         const unique = new Map();
         elements.forEach((place) => {
           const lat = place.lat != null ? place.lat : place.center && place.center.lat;
           const lon = place.lon != null ? place.lon : place.center && place.center.lon;
           if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
-
           const tags = place.tags || {};
           if (tags.amenity !== "cafe") return;
-          if (
-            tags.disused ||
-            tags["disused:amenity"] ||
-            tags["disused:shop"] ||
-            tags.abandoned ||
-            tags["abandoned:amenity"] ||
-            tags["abandoned:shop"] ||
-            tags.vacant ||
-            tags.demolished ||
-            tags["cafe:state"] === "closed" ||
-            tags.lifecycle === "closed" ||
-            tags.closed === "yes" ||
-            tags.permanently_closed === "yes" ||
-            tags.end_date ||
-            tags.access === "private" ||
-            tags.opening_hours === "closed"
-          ) return;
           const name = (tags.name || tags["name:uk"] || tags.brand || "").trim();
-          if (!name) return;
-          const key = name.toLocaleLowerCase("uk") + "|" + lat.toFixed(4) + "|" + lon.toFixed(4);
-          if (unique.has(key)) return;
+          if (!name || !isOperating(tags) || !isCoffeePlace(tags, name)) return;
 
+          const key = name.toLocaleLowerCase("uk") + "|" + Math.round(lat * 2500) + "|" + Math.round(lon * 1600);
+          if (unique.has(key)) return;
           unique.set(key, {
             id: place.type + "/" + place.id,
-            type: place.type,
-            osmId: place.id,
             name,
             address: cafeAddress(tags),
-            lat,
-            lon
+            lat: +lat.toFixed(6),
+            lon: +lon.toFixed(6)
           });
         });
-
         return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, "uk"));
       }
 
       function parseCityBoundary(elements) {
-        const relation = elements.find((element) => element.type === "relation" && element.id === KYIV_RELATION);
+        const relation = elements.find((el) => el.type === "relation" && el.id === KYIV_RELATION);
         if (!relation || !Array.isArray(relation.members)) return [];
-
-        const samePoint = (a, b) => Math.abs(a[0] - b[0]) < 1e-7 && Math.abs(a[1] - b[1]) < 1e-7;
+        const same = (a, b) => Math.abs(a[0] - b[0]) < 1e-7 && Math.abs(a[1] - b[1]) < 1e-7;
         const rings = [];
 
         ["outer", "inner"].forEach((role) => {
           const segments = relation.members
-            .filter((member) => member.type === "way" && member.role === role && Array.isArray(member.geometry))
-            .map((member) => member.geometry.map((point) => [point.lat, point.lon]))
-            .filter((points) => points.length > 1);
+            .filter((m) => m.type === "way" && m.role === role && Array.isArray(m.geometry))
+            .map((m) => m.geometry.map((p) => [+p.lat.toFixed(5), +p.lon.toFixed(5)]))
+            .filter((pts) => pts.length > 1);
 
           while (segments.length) {
             const ring = segments.shift();
             let joined = true;
-
-            while (!samePoint(ring[0], ring[ring.length - 1]) && joined) {
+            while (!same(ring[0], ring[ring.length - 1]) && joined) {
               joined = false;
-              for (let index = 0; index < segments.length; index += 1) {
-                const segment = segments[index];
-                const first = segment[0];
-                const last = segment[segment.length - 1];
-
-                if (samePoint(ring[ring.length - 1], first)) ring.push(...segment.slice(1));
-                else if (samePoint(ring[ring.length - 1], last)) ring.push(...segment.slice(0, -1).reverse());
-                else if (samePoint(ring[0], last)) ring.unshift(...segment.slice(0, -1));
-                else if (samePoint(ring[0], first)) ring.unshift(...segment.slice(1).reverse());
+              for (let i = 0; i < segments.length; i += 1) {
+                const seg = segments[i];
+                const first = seg[0];
+                const last = seg[seg.length - 1];
+                if (same(ring[ring.length - 1], first)) ring.push(...seg.slice(1));
+                else if (same(ring[ring.length - 1], last)) ring.push(...seg.slice(0, -1).reverse());
+                else if (same(ring[0], last)) ring.unshift(...seg.slice(0, -1));
+                else if (same(ring[0], first)) ring.unshift(...seg.slice(1).reverse());
                 else continue;
-
-                segments.splice(index, 1);
+                segments.splice(i, 1);
                 joined = true;
                 break;
               }
             }
-
-            if (ring.length >= 4 && samePoint(ring[0], ring[ring.length - 1])) rings.push({ role, points: ring });
+            if (ring.length >= 4 && same(ring[0], ring[ring.length - 1])) rings.push({ role, points: ring });
           }
         });
-
         return rings;
       }
 
-      function keepMapOnKyiv() {
+      async function overpass(query) {
+        let lastError = new Error("Overpass unavailable");
+        for (const url of OVERPASS_URLS) {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 45000);
+          try {
+            const response = await fetch(url, {
+              method: "POST",
+              body: new URLSearchParams({ data: query }),
+              signal: controller.signal
+            });
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            const data = await response.json();
+            if (!Array.isArray(data.elements)) throw new Error("Bad response");
+            // Overpass reports timeouts as 200 + remark with partial data — treat as failure
+            if (data.remark && /error|timed out|out of memory/i.test(data.remark)) throw new Error(data.remark);
+            return data.elements;
+          } catch (error) {
+            lastError = error;
+          } finally {
+            clearTimeout(timer);
+          }
+        }
+        throw lastError;
+      }
+
+      async function loadCafes(force = false) {
+        if (cafes.length) redraw(true);
+        if (!force && cafes.length && Date.now() - cafesFetchedAt < CAFE_TTL) return;
+        if (!cafes.length) showStatus("loading");
+        try {
+          const elements = await overpass(
+            "[out:json][timeout:90];area(" + KYIV_AREA + ")->.k;nwr[\"amenity\"=\"cafe\"](area.k);out center;"
+          );
+          const latest = parseCafes(elements);
+          if (!latest.length) throw new Error("Empty");
+          cafes = latest;
+          cafesFetchedAt = Date.now();
+          store.set(CAFE_CACHE, { places: cafes, fetchedAt: cafesFetchedAt });
+          hideStatus();
+          redraw(true);
+        } catch {
+          if (!cafes.length) showStatus("error");
+        }
+      }
+
+      async function loadBoundary() {
+        if (cityBoundary.length) drawBoundary();
+        if (cityBoundary.length && Date.now() - boundaryFetchedAt < BOUNDARY_TTL) return;
+        try {
+          const rings = parseCityBoundary(await overpass("[out:json][timeout:60];relation(" + KYIV_RELATION + ");out geom;"));
+          if (!rings.length) return;
+          cityBoundary = rings;
+          store.set(BOUNDARY_CACHE, { rings, fetchedAt: Date.now() });
+          drawBoundary();
+        } catch { /* the map works fine without the outline */ }
+      }
+
+      function showStatus(kind) {
+        const el = $("status");
+        el.className = "status glass on " + kind;
+        $("statusText").textContent = kind === "loading" ? "Шукаю кав’ярні" : "Не вдалося завантажити";
+      }
+      function hideStatus() { $("status").classList.remove("on"); }
+
+      function drawBoundary() {
         if (!map || !cityBoundary.length) return;
+        maskLayer.clearLayers();
+        boundaryLayer.clearLayers();
         const points = cityBoundary.flatMap((ring) => ring.points);
-        const bounds = L.latLngBounds(points).pad(.55);
-        map.setMaxBounds(bounds);
-      }
-
-      function drawKyivMask() {
-        if (!map || !cityMaskLayer || !cityBoundaryLayer || !cityBoundary.length) return;
-        cityMaskLayer.clearLayers();
-
-        const points = cityBoundary.flatMap((ring) => ring.points);
-        const maskBounds = L.latLngBounds(points).pad(6);
-        const southWest = maskBounds.getSouthWest();
-        const northEast = maskBounds.getNorthEast();
-        const frame = [
-          [southWest.lat, southWest.lng],
-          [northEast.lat, southWest.lng],
-          [northEast.lat, northEast.lng],
-          [southWest.lat, northEast.lng],
-          [southWest.lat, southWest.lng]
-        ];
-        const maskRings = [frame, ...cityBoundary.map((ring) => ring.points)];
-
-        L.polygon(maskRings, {
-          pane: "cityMaskPane",
-          stroke: false,
-          fillColor: "#3b271f",
-          fillOpacity: .42,
-          fillRule: "evenodd",
-          interactive: false
-        }).addTo(cityMaskLayer);
-      }
-
-      function drawKyivBoundary() {
-        if (!map || !cityBoundaryLayer || !cityBoundary.length) return;
-        cityBoundaryLayer.clearLayers();
+        const outer = L.latLngBounds(points).pad(6);
+        const sw = outer.getSouthWest();
+        const ne = outer.getNorthEast();
+        const frame = [[sw.lat, sw.lng], [ne.lat, sw.lng], [ne.lat, ne.lng], [sw.lat, ne.lng]];
+        L.polygon([frame, ...cityBoundary.map((r) => r.points)], {
+          pane: "maskPane", stroke: false, fillColor: "#2b1d16", fillOpacity: .22, fillRule: "evenodd", interactive: false
+        }).addTo(maskLayer);
         cityBoundary.forEach((ring) => {
-          L.polyline(ring.points, {
-            pane: "cityGlowPane",
-            color: "#f4f0e7",
-            weight: 8,
-            opacity: .92,
-            lineCap: "round",
-            lineJoin: "round",
-            interactive: false
-          }).addTo(cityBoundaryLayer);
-          L.polyline(ring.points, {
-            pane: "cityBorderPane",
-            color: "#5d3d2e",
-            weight: 2.5,
-            opacity: .98,
-            lineCap: "round",
-            lineJoin: "round",
-            interactive: false
-          }).addTo(cityBoundaryLayer);
+          L.polyline(ring.points, { pane: "borderPane", color: "#fbf8f2", weight: 6, opacity: .7, interactive: false }).addTo(boundaryLayer);
+          L.polyline(ring.points, { pane: "borderPane", color: "#5d3d2e", weight: 1.6, opacity: .85, interactive: false }).addTo(boundaryLayer);
         });
+        map.setMaxBounds(L.latLngBounds(points).pad(.5));
       }
 
-      function drawKyivFocus() {
-        drawKyivMask();
-        drawKyivBoundary();
+      function visibleCafes() {
+        const query = $("search").value.trim().toLocaleLowerCase("uk");
+        return cafes.filter((cafe) =>
+          (!onlyVisited || visited.has(cafe.id)) &&
+          (!query || (cafe.name + " " + cafe.address).toLocaleLowerCase("uk").includes(query))
+        );
       }
 
-      function scheduleMapDraw() {
-        if (mapDrawFrame) return;
-        mapDrawFrame = requestAnimationFrame(() => {
-          mapDrawFrame = 0;
-          drawPins();
-        });
-      }
-
-      function pinIcon(cafe) {
-        const state = visited.has(cafe.id) ? "pin visited" : "pin";
-        const svg = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M25.6 4.4c4.2 3.5 4 10.6-.5 16.8-4.5 6.3-12.1 9.3-16.5 6.2-4.4-3.1-4-10.3.4-16.4 4.5-6.2 12.2-9.8 16.6-6.6Z" fill="currentColor"/><path d="M8.1 25.5C15.8 20.7 20.8 12.2 25 5.2" fill="none" stroke="#f4f0e7" stroke-width="2" stroke-linecap="round"/></svg>';
-        return L.divIcon({ className: "coffee-marker-wrapper", html: '<span class="' + state + '">' + svg + "</span>", iconSize: [30, 30], iconAnchor: [15, 15] });
-      }
-
-      function clusterIcon(count) {
+      function pinIcon(cafe, delay) {
+        const classes = ["pin"];
+        if (visited.has(cafe.id)) classes.push("visited");
+        if (selectedCafe && selectedCafe.id === cafe.id) classes.push("selected");
+        if (animateAll || !seenPins.has(cafe.id)) classes.push("pop");
+        seenPins.add(cafe.id);
         return L.divIcon({
-          className: "cluster-marker-wrapper",
-          html: '<span class="cluster">' + count + "</span>",
-          iconSize: [36, 36],
-          iconAnchor: [18, 18]
+          className: "marker-wrap",
+          html: '<span class="' + classes.join(" ") + '" style="animation-delay:' + delay + 'ms">' + bean() + "</span>",
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+      }
+
+      function clusterIcon(count, delay) {
+        const size = count < 10 ? 34 : count < 50 ? 40 : count < 200 ? 46 : 52;
+        return L.divIcon({
+          className: "marker-wrap",
+          html: '<span class="cluster' + (animateAll ? " pop" : "") + '" style="animation-delay:' + delay + 'ms">' + count + "</span>",
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2]
         });
       }
 
       function drawPins() {
-        if (!map || !cafePins) return;
+        if (!map) return;
         cafePins.clearLayers();
-
-        const visibleBounds = map.getBounds().pad(.12);
-        const places = placesToShow().filter((cafe) => visibleBounds.contains([cafe.lat, cafe.lon]));
+        const bounds = map.getBounds().pad(.15);
+        const places = visibleCafes().filter((cafe) => bounds.contains([cafe.lat, cafe.lon]));
         const zoom = map.getZoom();
+        let index = 0;
+        const nextDelay = () => (reduceMotion ? 0 : Math.min(index++ * 6, 260));
 
-        if (zoom < 19) {
+        const addPin = (cafe) => {
+          const marker = L.marker([cafe.lat, cafe.lon], {
+            icon: pinIcon(cafe, nextDelay()),
+            title: cafe.name,
+            alt: cafe.name,
+            zIndexOffset: selectedCafe && selectedCafe.id === cafe.id ? 1000 : 0
+          });
+          marker.on("click", () => selectCafe(cafe));
+          marker.addTo(cafePins);
+        };
+
+        if (zoom >= 18) {
+          places.forEach(addPin);
+        } else {
           const groups = new Map();
           places.forEach((cafe) => {
-            const point = map.project([cafe.lat, cafe.lon], zoom);
-            const key = Math.floor(point.x / 50) + ":" + Math.floor(point.y / 50);
+            const p = map.project([cafe.lat, cafe.lon], zoom);
+            const key = Math.floor(p.x / 56) + ":" + Math.floor(p.y / 56);
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key).push(cafe);
           });
-
           groups.forEach((group) => {
+            if (group.length === 1) return addPin(group[0]);
             const center = [
-              group.reduce((sum, cafe) => sum + cafe.lat, 0) / group.length,
-              group.reduce((sum, cafe) => sum + cafe.lon, 0) / group.length
+              group.reduce((s, c) => s + c.lat, 0) / group.length,
+              group.reduce((s, c) => s + c.lon, 0) / group.length
             ];
-
-            if (group.length > 1) {
-              const marker = L.marker(center, { icon: clusterIcon(group.length) });
-              marker.on("click", () => map.flyTo(center, Math.min(19, zoom + 2), { duration: .4 }));
-              marker.addTo(cafePins);
-            } else {
-              addPin(group[0]);
-            }
+            const marker = L.marker(center, { icon: clusterIcon(group.length, nextDelay()) });
+            marker.on("click", () => {
+              const groupBounds = L.latLngBounds(group.map((c) => [c.lat, c.lon]));
+              if (groupBounds.getNorthEast().distanceTo(groupBounds.getSouthWest()) < 5) {
+                map.flyTo(center, Math.min(19, zoom + 3), { duration: .5 });
+              } else {
+                map.flyToBounds(groupBounds, { padding: [70, 70], maxZoom: Math.min(19, zoom + 4), duration: .5 });
+              }
+            });
+            marker.addTo(cafePins);
           });
-        } else {
-          places.forEach(addPin);
         }
-
+        animateAll = false;
       }
 
-      function addPin(cafe) {
-        const marker = L.marker([cafe.lat, cafe.lon], {
-          icon: pinIcon(cafe),
-          title: cafe.name,
-          alt: cafe.name
-        });
-        marker.on("click", () => selectCafe(cafe));
-        marker.addTo(cafePins);
-      }
-
-      function selectCafe(cafe) {
-        setReviewsOpen(false);
-        selectedCafe = cafe;
-        byId("cafeName").textContent = cafe.name;
-        byId("cafeAddress").textContent = cafe.address;
-        byId("cafeAddress").hidden = !cafe.address;
-        byId("reviewForm").reset();
-        byId("photoFileName").textContent = "Фото необов’язкове";
-        byId("reviewStatus").textContent = "";
-        document.querySelectorAll(".drink-option").forEach((option) => option.classList.remove("selected"));
-        setReviewRating(0);
-        renderCafeReviews();
-        updateVisitButton();
-        byId("cafeCard").classList.add("open");
-        drawPins();
-      }
-
-      function updateVisitButton() {
-        const button = byId("visitToggle");
-        const isVisited = selectedCafe && visited.has(selectedCafe.id);
-        button.classList.toggle("visited", Boolean(isVisited));
-        button.innerHTML = isVisited
-          ? '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 10 4 4 8-8"/></svg>Відвідано'
-          : "Позначити як відвідану";
-      }
-
-      function closeCafeCard() {
-        selectedCafe = null;
-        byId("cafeCard").classList.remove("open");
-        drawPins();
-      }
-
-      function setReviewRating(value) {
-        const rating = Number(value) || 0;
-        byId("reviewRating").value = rating ? String(rating) : "";
-        document.querySelectorAll(".bean-score").forEach((button) => {
-          const score = Number(button.dataset.rating);
-          button.classList.toggle("active", score <= rating);
-          button.setAttribute("aria-pressed", String(score === rating));
+      function redraw(animate = false) {
+        if (animate) animateAll = true;
+        if (drawFrame) return;
+        drawFrame = requestAnimationFrame(() => {
+          drawFrame = 0;
+          drawPins();
         });
       }
 
-      function reviewDrinks(review) {
-        if (Array.isArray(review.drinks)) return review.drinks;
-        return review.drink ? [review.drink] : [];
+
+      const formatDate = (ts) =>
+        new Date(Number(ts)).toLocaleDateString("uk-UA", { day: "numeric", month: "short", year: "numeric" });
+      const reviewDrinks = (r) => (Array.isArray(r.drinks) ? r.drinks : r.drink ? [r.drink] : []);
+
+      function beansRow(value) {
+        const row = document.createElement("div");
+        row.className = "beans";
+        row.setAttribute("aria-label", value + " з 5");
+        row.innerHTML = Array.from({ length: 5 }, (_, i) => bean(i < Number(value) ? "#5d3d2e" : "#ddd2c4")).join("");
+        return row;
       }
 
-      function makeReviewBeans(value) {
-        const rating = document.createElement("div");
-        rating.className = "review-beans";
-        rating.setAttribute("aria-label", "Оцінка " + value + " з 5");
-        rating.innerHTML = Array.from({ length: 5 }, (_, index) => {
-          const color = index < Number(value) ? "#815e48" : "#d6cbbc";
-          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="' + color + '"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg>';
-        }).join("");
-        return rating;
-      }
+      function reviewNode(review, index, withCafe) {
+        const item = document.createElement("article");
+        item.className = "review";
+        item.style.setProperty("--i", Math.min(index, 8));
 
-      function reviewDetails(review) {
-        return [...reviewDrinks(review), review.decaf ? "декаф" : "", review.price != null ? review.price + " грн" : ""].filter(Boolean);
-      }
-
-      function renderCafeReviews() {
-        const list = byId("reviewList");
-        list.replaceChildren();
-        const cafeReviews = reviews
-          .filter((review) => review.cafeId === selectedCafe.id)
-          .sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
-
-        if (!cafeReviews.length) {
-          const empty = document.createElement("p");
-          empty.className = "review-empty";
-          empty.textContent = "Поки немає відгуків.";
-          list.append(empty);
-          return;
+        if (withCafe) {
+          const title = document.createElement("h3");
+          title.className = "review-cafe";
+          title.textContent = review.cafeName || "Кав’ярня";
+          item.append(title);
         }
 
-        cafeReviews.forEach((review) => {
-          const item = document.createElement("article");
-          item.className = "review-item";
+        const head = document.createElement("div");
+        head.className = "review-head";
+        const date = document.createElement("time");
+        date.className = "review-date";
+        date.dateTime = new Date(Number(review.createdAt)).toISOString();
+        date.textContent = formatDate(review.createdAt);
+        head.append(beansRow(review.rating), date);
+        item.append(head);
 
-          const head = document.createElement("div");
-          head.className = "review-item-head";
-          const date = document.createElement("time");
-          date.className = "review-date";
-          date.dateTime = new Date(Number(review.createdAt)).toISOString();
-          date.textContent = new Date(Number(review.createdAt)).toLocaleDateString("uk-UA", { day: "numeric", month: "short", year: "numeric" });
-          head.append(date);
+        const details = [...reviewDrinks(review), review.decaf ? "декаф" : "", review.price != null ? review.price + " ₴" : ""].filter(Boolean);
+        if (details.length) {
+          const chips = document.createElement("div");
+          chips.className = "chips";
+          details.forEach((d) => {
+            const chip = document.createElement("span");
+            chip.textContent = d;
+            chips.append(chip);
+          });
+          item.append(chips);
+        }
 
-          const rating = makeReviewBeans(review.rating);
-          const meta = document.createElement("p");
-          meta.className = "review-meta";
-          meta.textContent = reviewDetails(review).join(" · ");
+        if (review.text) {
           const text = document.createElement("p");
           text.className = "review-text";
           text.textContent = review.text;
+          item.append(text);
+        }
 
-          item.append(head, rating, meta, text);
-          if (review.photo) {
-            const photo = document.createElement("img");
-            photo.className = "review-photo";
-            photo.src = review.photo;
-            photo.alt = "Фото з відгуку";
-            photo.loading = "lazy";
-            item.append(photo);
-          }
-          list.append(item);
-        });
+        if (review.photo) {
+          const photo = document.createElement("img");
+          photo.className = "review-photo";
+          photo.src = review.photo;
+          photo.alt = "";
+          photo.loading = "lazy";
+          item.append(photo);
+        }
+
+        if (withCafe && cafes.some((c) => c.id === review.cafeId)) {
+          const open = document.createElement("button");
+          open.className = "review-open";
+          open.type = "button";
+          open.dataset.cafeId = review.cafeId;
+          open.innerHTML = "На мапі" + ARROW;
+          item.append(open);
+        }
+        return item;
+      }
+
+      function emptyNode(text) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.innerHTML = bean();
+        empty.append(text);
+        return empty;
+      }
+
+      const byNewest = (a, b) => Number(b.createdAt) - Number(a.createdAt);
+
+      function renderCafeReviews() {
+        const list = $("reviewList");
+        const own = reviews.filter((r) => r.cafeId === selectedCafe.id).sort(byNewest);
+        list.replaceChildren(...(own.length ? own.map((r, i) => reviewNode(r, i, false)) : [emptyNode("Поки без відгуків")]));
       }
 
       function renderAllReviews() {
-        const list = byId("allReviewList");
-        list.replaceChildren();
-        const latestReviews = [...reviews].sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
-        if (!latestReviews.length) {
-          const empty = document.createElement("p");
-          empty.className = "review-empty";
-          empty.textContent = "Тут ще немає відгуків.";
-          list.append(empty);
-          return;
+        const list = $("allReviewList");
+        const all = [...reviews].sort(byNewest);
+        $("reviewsCount").textContent = all.length ? all.length : "";
+        list.replaceChildren(...(all.length ? all.map((r, i) => reviewNode(r, i, true)) : [emptyNode("Тут з’являться твої відгуки")]));
+      }
+
+      function updateBadge() { $("reviewsBadge").classList.toggle("on", reviews.length > 0); }
+
+      function bump(el) {
+        if (reduceMotion || !el.animate) return;
+        el.animate([{ transform: "scale(.82)" }, { transform: "scale(1.08)" }, { transform: "scale(1)" }], { duration: 380, easing: "cubic-bezier(.34,1.4,.64,1)" });
+      }
+
+      function setDrawerOpen(open) {
+        $("reviewsDrawer").classList.toggle("open", open);
+        $("reviewsToggle").setAttribute("aria-expanded", String(open));
+        if (open) {
+          closeCard();
+          renderAllReviews();
+          $("reviewsDrawer").scrollTop = 0;
         }
+      }
 
-        latestReviews.forEach((review) => {
-          const item = document.createElement("article");
-          item.className = "all-review-item";
+      function setFormOpen(open) {
+        $("formWrap").classList.toggle("open", open);
+        $("addReview").setAttribute("aria-expanded", String(open));
+        if (open) {
+          setTimeout(() => $("addReview").scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" }), 180);
+        }
+      }
 
-          const head = document.createElement("div");
-          head.className = "review-item-head";
-          const cafeName = document.createElement("h3");
-          cafeName.className = "all-review-cafe";
-          cafeName.textContent = review.cafeName || "Кав’ярня";
-          const date = document.createElement("time");
-          date.className = "all-review-date";
-          date.dateTime = new Date(Number(review.createdAt)).toISOString();
-          date.textContent = new Date(Number(review.createdAt)).toLocaleDateString("uk-UA", { day: "numeric", month: "short", year: "numeric" });
-          head.append(cafeName, date);
+      function resetForm() {
+        $("reviewForm").reset();
+        setRating(0, false);
+        $("reviewStatus").textContent = "";
+        $("photoBtn").classList.remove("has-photo");
+        $("photoBtn").style.backgroundImage = "";
+      }
 
-          const rating = makeReviewBeans(review.rating);
-          const meta = document.createElement("p");
-          meta.className = "review-meta";
-          meta.textContent = reviewDetails(review).join(" · ");
-          const text = document.createElement("p");
-          text.className = "review-text";
-          text.textContent = review.text;
-          item.append(head, rating, meta, text);
+      function selectCafe(cafe, fly = false) {
+        setDrawerOpen(false);
+        const changed = !selectedCafe || selectedCafe.id !== cafe.id;
+        selectedCafe = cafe;
+        $("cafeName").textContent = cafe.name;
+        $("cafeAddress").textContent = cafe.address;
+        $("cafeAddress").hidden = !cafe.address;
+        if (changed) {
+          resetForm();
+          setFormOpen(false);
+          $("cafeCard").scrollTop = 0;
+        }
+        renderCafeReviews();
+        updateVisitButton();
+        $("cafeCard").classList.add("open");
+        if (fly) map.flyTo([cafe.lat, cafe.lon], Math.max(map.getZoom(), 17), { duration: .6 });
+        redraw();
+      }
 
-          if (review.photo) {
-            const photo = document.createElement("img");
-            photo.className = "review-photo";
-            photo.src = review.photo;
-            photo.alt = "Фото з відгуку";
-            photo.loading = "lazy";
-            item.append(photo);
-          }
+      function closeCard() {
+        if (!selectedCafe) return;
+        selectedCafe = null;
+        $("cafeCard").classList.remove("open");
+        redraw();
+      }
 
-          if (cafes.some((cafe) => cafe.id === review.cafeId)) {
-            const openCafe = document.createElement("button");
-            openCafe.className = "all-review-open";
-            openCafe.type = "button";
-            openCafe.dataset.cafeId = review.cafeId;
-            openCafe.textContent = "Показати на мапі";
-            item.append(openCafe);
-          }
-          list.append(item);
+      function updateVisitButton() {
+        const on = Boolean(selectedCafe && visited.has(selectedCafe.id));
+        $("visitToggle").setAttribute("aria-pressed", String(on));
+        $("visitToggle").title = on ? "Відвідано" : "Позначити відвіданою";
+      }
+
+      function setSearchOpen(open) {
+        const control = $("searchControl");
+        control.classList.toggle("open", open);
+        $("searchToggle").setAttribute("aria-expanded", String(open));
+        $("search").tabIndex = open ? 0 : -1;
+        if (open) {
+          setTimeout(() => $("search").focus(), 60);
+        } else if ($("search").value) {
+          $("search").value = "";
+          $("clearSearch").classList.remove("on");
+          redraw(true);
+        }
+      }
+
+      function buildForm() {
+        $("beanRating").innerHTML = Array.from({ length: 5 }, (_, i) =>
+          '<button class="bean-score" type="button" role="radio" aria-checked="false" data-rating="' + (i + 1) + '" aria-label="' + (i + 1) + ' з 5">' + bean() + "</button>"
+        ).join("");
+
+        DRINKS.forEach(([name, src]) => {
+          const label = document.createElement("label");
+          label.className = "drink";
+          label.innerHTML = '<input type="checkbox" name="drink"><img alt="" draggable="false"><span></span>';
+          label.querySelector("input").value = name;
+          label.querySelector("img").src = src;
+          label.querySelector("span").textContent = name;
+          $("drinkPicker").append(label);
         });
       }
 
-      function setReviewsOpen(isOpen) {
-        byId("reviewsDrawer").classList.toggle("open", isOpen);
-        byId("reviewsToggle").setAttribute("aria-expanded", String(isOpen));
-        if (isOpen) renderAllReviews();
+      function setRating(value, animate = true) {
+        const rating = Number(value) || 0;
+        $("beanRating").dataset.value = rating || "";
+        document.querySelectorAll(".bean-score").forEach((btn, i) => {
+          const on = i < rating;
+          btn.classList.toggle("on", on);
+          btn.setAttribute("aria-checked", String(i + 1 === rating));
+          if (animate && on && !reduceMotion && btn.animate) {
+            btn.animate([{ transform: "scale(.6) rotate(-20deg)" }, { transform: "scale(1)" }], { duration: 360, delay: i * 40, easing: "cubic-bezier(.34,1.4,.64,1)", fill: "backwards" });
+          }
+        });
       }
 
-      async function compressReviewPhoto(file) {
-        if (!file) return "";
-        if (!file.type.startsWith("image/")) throw new Error("Обери файл-зображення.");
-        if (file.size > 12 * 1024 * 1024) throw new Error("Фото має бути менше 12 МБ.");
+      function formError(text) {
+        const status = $("reviewStatus");
+        status.textContent = text;
+        status.classList.remove("shake");
+        void status.offsetWidth;
+        status.classList.add("shake");
+      }
 
-        const objectUrl = URL.createObjectURL(file);
+      async function compressPhoto(file) {
+        if (!file) return "";
+        if (!file.type.startsWith("image/")) throw new Error("Потрібне зображення");
+        if (file.size > 12 * 1024 * 1024) throw new Error("Фото до 12 МБ");
+        const url = URL.createObjectURL(file);
         try {
           const image = new Image();
           await new Promise((resolve, reject) => {
             image.onload = resolve;
-            image.onerror = () => reject(new Error("Не вдалося відкрити це фото."));
-            image.src = objectUrl;
+            image.onerror = () => reject(new Error("Не вдалося відкрити фото"));
+            image.src = url;
           });
           const scale = Math.min(1, 1000 / Math.max(image.naturalWidth, image.naturalHeight));
           const canvas = document.createElement("canvas");
@@ -1164,141 +1178,50 @@
           canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
           return canvas.toDataURL("image/jpeg", .78);
         } finally {
-          URL.revokeObjectURL(objectUrl);
+          URL.revokeObjectURL(url);
         }
       }
 
-      async function loadCafes() {
-        if (cityBoundary.length) {
-          keepMapOnKyiv();
-          drawKyivFocus();
-        }
-        if (cafes.length) {
-          drawPins();
-          if (cityBoundary.length && Date.now() - cafesCachedAt < CACHE_TTL) return;
-        }
+      buildForm();
+      updateBadge();
 
-        const query = '[out:json][timeout:25];area(' + KYIV_AREA + ')->.kyiv;(nwr["amenity"="cafe"]["name"](area.kyiv);nwr["amenity"="cafe"]["name:uk"](area.kyiv);nwr["amenity"="cafe"]["brand"](area.kyiv);)->.cafes;relation(' + KYIV_RELATION + ')->.boundary;.cafes out center tags;.boundary out geom;';
-
-        for (const endpoint of OVERPASS_URLS) {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 12000);
-          try {
-            const response = await fetch(endpoint, {
-              method: "POST",
-              headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-              body: new URLSearchParams({ data: query }),
-              signal: controller.signal
-            });
-            if (!response.ok) throw new Error("OpenStreetMap " + response.status);
-
-            const data = await response.json();
-            if (!Array.isArray(data.elements)) throw new Error("No cafe data");
-
-            const latest = parseCafeData(data.elements);
-            if (!latest.length) throw new Error("No places returned");
-            cafes = latest;
-            const latestBoundary = parseCityBoundary(data.elements);
-            if (latestBoundary.length) cityBoundary = latestBoundary;
-            cafesCachedAt = Date.now();
-            localStorage.setItem(CAFE_CACHE, JSON.stringify({ places: cafes, cityBoundary, fetchedAt: cafesCachedAt }));
-            keepMapOnKyiv();
-            drawKyivFocus();
-            drawPins();
-            return;
-          } catch {
-            continue;
-          } finally {
-            clearTimeout(timeoutId);
-          }
-        }
-
-      }
-
-      document.querySelectorAll("[data-filter]").forEach((button) => {
-        button.addEventListener("click", () => {
-          activeFilter = button.dataset.filter;
-          document.querySelectorAll("[data-filter]").forEach((item) => item.classList.toggle("active", item === button));
-          drawPins();
-        });
+      $("beanRating").addEventListener("click", (e) => {
+        const btn = e.target.closest(".bean-score");
+        if (btn) setRating(btn.dataset.rating);
       });
 
-      function setSearchOpen(isOpen) {
-        const control = byId("searchControl");
-        const toggle = byId("searchToggle");
-        control.classList.toggle("open", isOpen);
-        toggle.setAttribute("aria-expanded", String(isOpen));
-        toggle.setAttribute("aria-label", isOpen ? "Закрити пошук" : "Відкрити пошук");
-        if (isOpen) {
-          requestAnimationFrame(() => byId("search").focus());
+      $("reviewPrice").addEventListener("input", (e) => {
+        e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
+      });
+
+      $("reviewPhoto").addEventListener("change", () => {
+        const file = $("reviewPhoto").files[0];
+        const btn = $("photoBtn");
+        if (btn.dataset.url) URL.revokeObjectURL(btn.dataset.url);
+        if (file && file.type.startsWith("image/")) {
+          btn.dataset.url = URL.createObjectURL(file);
+          btn.style.backgroundImage = "url('" + btn.dataset.url + "')";
+          btn.classList.add("has-photo");
+          bump(btn);
         } else {
-          byId("search").value = "";
-          byId("clearSearch").classList.remove("visible");
-          drawPins();
+          btn.style.backgroundImage = "";
+          btn.classList.remove("has-photo");
         }
-      }
-
-      byId("searchToggle").addEventListener("click", () => {
-        setSearchOpen(!byId("searchControl").classList.contains("open"));
-      });
-      byId("search").addEventListener("keydown", (event) => {
-        if (event.key === "Escape") setSearchOpen(false);
       });
 
-      byId("search").addEventListener("input", () => {
-        const hasSearch = Boolean(byId("search").value.trim());
-        byId("clearSearch").classList.toggle("visible", hasSearch);
-        drawPins();
-      });
-      byId("search").addEventListener("keydown", (event) => {
-        if (event.key !== "Enter") return;
-        const matches = placesToShow();
-        if (matches.length !== 1) return;
-        selectCafe(matches[0]);
-        map.flyTo([matches[0].lat, matches[0].lon], 16, { duration: .4 });
-      });
-
-      byId("clearSearch").addEventListener("click", () => {
-        byId("search").value = "";
-        byId("clearSearch").classList.remove("visible");
-        drawPins();
-        byId("search").focus();
-      });
-
-      document.querySelectorAll('input[name="drink"]').forEach((input) => {
-        input.addEventListener("change", () => {
-          document.querySelectorAll(".drink-option").forEach((option) => {
-            const drinkInput = option.querySelector('input[name="drink"]');
-            option.classList.toggle("selected", Boolean(drinkInput && drinkInput.checked));
-          });
-        });
-      });
-      document.querySelectorAll(".bean-score").forEach((button) => {
-        button.addEventListener("click", () => setReviewRating(button.dataset.rating));
-      });
-      byId("reviewPhoto").addEventListener("change", () => {
-        const file = byId("reviewPhoto").files[0];
-        byId("photoFileName").textContent = file ? file.name : "Фото необов’язкове";
-        byId("reviewStatus").textContent = "";
-      });
-      byId("reviewForm").addEventListener("submit", async (event) => {
-        event.preventDefault();
+      $("reviewForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
         if (!selectedCafe) return;
-        const rating = Number(byId("reviewRating").value);
-        if (!rating) {
-          byId("reviewStatus").textContent = "Обери оцінку від 1 до 5 зерняток.";
-          return;
-        }
-        const drinks = Array.from(document.querySelectorAll('input[name="drink"]:checked'), (input) => input.value);
-        if (!drinks.length) {
-          byId("reviewStatus").textContent = "Обери хоча б один напій.";
-          return;
-        }
-        if (!byId("reviewForm").reportValidity()) return;
+        const rating = Number($("beanRating").dataset.value);
+        const drinks = Array.from(document.querySelectorAll('input[name="drink"]:checked'), (i) => i.value);
+        const text = $("reviewText").value.trim();
+        if (!rating) return formError("Оціни зернятками");
+        if (!drinks.length) return formError("Обери напій");
+        if (!text) return formError("Додай кілька слів");
 
-        const submit = byId("submitReview");
+        const submit = $("submitReview");
         submit.disabled = true;
-        byId("reviewStatus").textContent = "Зберігаю…";
+        $("reviewStatus").textContent = "";
         try {
           const review = {
             id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
@@ -1306,90 +1229,131 @@
             cafeName: selectedCafe.name,
             rating,
             drinks,
-            decaf: byId("reviewDecaf").checked,
-            price: byId("reviewPrice").value === "" ? null : Number(byId("reviewPrice").value),
-            text: byId("reviewText").value.trim(),
-            photo: await compressReviewPhoto(byId("reviewPhoto").files[0]),
+            decaf: $("reviewDecaf").checked,
+            price: $("reviewPrice").value === "" ? null : Number($("reviewPrice").value),
+            text,
+            photo: await compressPhoto($("reviewPhoto").files[0]),
             createdAt: Date.now()
           };
-
           reviews.unshift(review);
-          if (!saveReviews()) {
+          if (!store.set(REVIEWS_KEY, reviews)) {
             reviews.shift();
-            byId("reviewStatus").textContent = "Не вистачає місця для збереження фото. Спробуй інше фото.";
-            return;
+            return formError("Забагато місця — спробуй інше фото");
           }
-          byId("reviewForm").reset();
-          document.querySelectorAll(".drink-option").forEach((option) => option.classList.remove("selected"));
-          byId("photoFileName").textContent = "Фото необов’язкове";
-          setReviewRating(0);
+          if (!visited.has(selectedCafe.id)) {
+            visited.add(selectedCafe.id);
+            store.set(VISITED_KEY, Array.from(visited));
+            updateVisitButton();
+            redraw();
+          }
+          resetForm();
+          setFormOpen(false);
           renderCafeReviews();
-          byId("reviewStatus").textContent = "Збережено на цьому пристрої.";
+          updateBadge();
+          $("cafeCard").scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
         } catch (error) {
-          byId("reviewStatus").textContent = error.message || "Не вдалося зберегти відгук.";
+          formError(error.message || "Не вдалося зберегти");
         } finally {
           submit.disabled = false;
         }
       });
-      byId("closeCard").addEventListener("click", closeCafeCard);
-      byId("reviewsToggle").addEventListener("click", () => {
-        const isOpen = byId("reviewsDrawer").classList.contains("open");
-        setReviewsOpen(!isOpen);
-      });
-      byId("closeReviews").addEventListener("click", () => setReviewsOpen(false));
-      byId("allReviewList").addEventListener("click", (event) => {
-        const button = event.target.closest("[data-cafe-id]");
-        if (!button) return;
-        const cafe = cafes.find((item) => item.id === button.dataset.cafeId);
-        if (!cafe) return;
-        setReviewsOpen(false);
-        selectCafe(cafe);
-        map.flyTo([cafe.lat, cafe.lon], 18, { duration: .45 });
-      });
-      document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && byId("reviewsDrawer").classList.contains("open")) setReviewsOpen(false);
-      });
-      byId("visitToggle").addEventListener("click", () => {
+
+      $("addReview").addEventListener("click", () => setFormOpen(!$("formWrap").classList.contains("open")));
+      $("closeCard").addEventListener("click", closeCard);
+
+      $("visitToggle").addEventListener("click", () => {
         if (!selectedCafe) return;
         if (visited.has(selectedCafe.id)) visited.delete(selectedCafe.id);
         else visited.add(selectedCafe.id);
-        saveVisited();
+        store.set(VISITED_KEY, Array.from(visited));
         updateVisitButton();
-        drawPins();
+        bump($("visitToggle"));
+        redraw();
+      });
+
+      $("visitedFilter").addEventListener("click", () => {
+        onlyVisited = !onlyVisited;
+        $("visitedFilter").setAttribute("aria-pressed", String(onlyVisited));
+        redraw(true);
+      });
+
+      $("reviewsToggle").addEventListener("click", () => setDrawerOpen(!$("reviewsDrawer").classList.contains("open")));
+      $("closeReviews").addEventListener("click", () => setDrawerOpen(false));
+      $("allReviewList").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-cafe-id]");
+        const cafe = btn && cafes.find((c) => c.id === btn.dataset.cafeId);
+        if (cafe) selectCafe(cafe, true);
+      });
+
+      $("searchToggle").addEventListener("click", () => setSearchOpen(!$("searchControl").classList.contains("open")));
+      $("search").addEventListener("input", () => {
+        $("clearSearch").classList.toggle("on", Boolean($("search").value.trim()));
+        redraw(true);
+      });
+      $("search").addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") return;
+        const matches = visibleCafes();
+        if (matches.length === 1) {
+          selectCafe(matches[0], true);
+        } else if (matches.length > 1 && matches.length < 400) {
+          map.flyToBounds(L.latLngBounds(matches.map((c) => [c.lat, c.lon])), { padding: [80, 80], maxZoom: 17, duration: .6 });
+        }
+        $("search").blur();
+      });
+      $("clearSearch").addEventListener("click", () => {
+        $("search").value = "";
+        $("clearSearch").classList.remove("on");
+        $("search").focus();
+        redraw(true);
+      });
+
+      $("retry").addEventListener("click", () => loadCafes(true));
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (document.activeElement === $("search")) setSearchOpen(false);
+        else if ($("reviewsDrawer").classList.contains("open")) setDrawerOpen(false);
+        else closeCard();
       });
 
       if (!window.L) {
+        showStatus("error");
         return;
       }
 
-      const INITIAL_ZOOM = window.innerWidth <= 700 ? 10 : 11;
       map = L.map("map", {
         zoomControl: false,
-        preferCanvas: true,
         minZoom: 9.5,
         maxZoom: 19,
         zoomSnap: .5,
+        zoomDelta: .5,
+        wheelPxPerZoomLevel: 90,
         maxBounds: L.latLngBounds([[50.05, 29.9], [50.85, 31.05]]),
-        maxBoundsViscosity: 1
-      }).setView(KYIV_CENTER, INITIAL_ZOOM);
+        maxBoundsViscosity: .9
+      }).setView(KYIV_CENTER, window.innerWidth <= 700 ? 10.5 : 11.5);
 
-      ["cityMaskPane", "cityGlowPane", "cityBorderPane"].forEach((paneName, index) => {
-        map.createPane(paneName);
-        map.getPane(paneName).style.zIndex = String(350 + index * 20);
-      });
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        subdomains: "abc",
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      map.createPane("maskPane").style.zIndex = 350;
+      map.createPane("borderPane").style.zIndex = 370;
+
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        subdomains: "abcd",
+        maxZoom: 20,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
       }).addTo(map);
 
-      cityMaskLayer = L.layerGroup().addTo(map);
-      cityBoundaryLayer = L.layerGroup().addTo(map);
+      maskLayer = L.layerGroup().addTo(map);
+      boundaryLayer = L.layerGroup().addTo(map);
       cafePins = L.layerGroup().addTo(map);
-      map.on("moveend zoomend", scheduleMapDraw);
-      loadCafes();
+
+      map.on("zoomstart", () => { animateAll = true; });
+      map.on("moveend", () => redraw());
+      map.on("click", () => {
+        setDrawerOpen(false);
+        if (!$("search").value) setSearchOpen(false);
+      });
+
+      loadCafes().finally(loadBoundary);
     })();
   </script>
 </body>
 </html>
-
