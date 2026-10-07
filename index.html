@@ -60,18 +60,22 @@
     }
 
     .brand {
-      flex: 0 0 54px;
-      height: 48px;
+      flex: 0 0 56px;
+      height: 56px;
       display: flex;
       align-items: center;
       justify-content: center;
       text-decoration: none;
       pointer-events: auto;
+      border: 1px solid rgba(93, 61, 46, .18);
+      border-radius: 14px;
+      background: #f4f0e7;
+      box-shadow: 0 4px 14px rgba(58, 39, 28, .16);
     }
     .brand-logo {
       display: block;
-      width: 42px;
-      height: 48px;
+      width: 44px;
+      height: 52px;
       object-fit: contain;
     }
 
@@ -148,21 +152,6 @@
       background: #eee8dd;
     }
     .clear-search.visible { display: block; }
-
-    .map-status {
-      position: fixed;
-      z-index: 450;
-      top: 72px;
-      left: 20px;
-      padding: 3px 0;
-      border: 0;
-      border-radius: 0;
-      color: var(--muted);
-      background: transparent;
-      text-shadow: 0 1px 8px rgba(255, 253, 248, .9);
-      font-size: 10px;
-      pointer-events: none;
-    }
 
     .map-filters {
       position: fixed;
@@ -294,17 +283,15 @@
       background: #f4f0e7;
     }
     .review-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .review-author { color: var(--espresso); font-size: 11px; font-weight: 650; }
     .review-date { color: var(--muted); font-size: 9px; }
     .review-beans { display: inline-flex; gap: 2px; margin-top: 4px; color: #815e48; }
     .review-beans svg { width: 13px; height: 13px; }
     .review-meta { margin: 5px 0 0; color: var(--clay); font-size: 10px; }
     .review-text { margin: 6px 0 0; color: var(--espresso); font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
     .review-photo { display: block; width: 100%; max-height: 190px; margin-top: 8px; border-radius: 8px; object-fit: cover; }
-    .review-fields { display: grid; gap: 9px; }
+    .review-fields { display: grid; gap: 11px; }
     .review-label { display: grid; gap: 5px; color: var(--muted); font-size: 10px; }
     .review-input,
-    .review-select,
     .review-textarea {
       width: 100%;
       min-height: 36px;
@@ -320,11 +307,10 @@
     }
     .review-textarea { min-height: 68px; resize: vertical; }
     .review-input:focus,
-    .review-select:focus,
     .review-textarea:focus { border-color: #afa089; }
     .rating-field { margin: 0; padding: 0; border: 0; }
     .rating-field legend { margin-bottom: 5px; color: var(--muted); font-size: 10px; }
-    .bean-rating { display: flex; gap: 5px; }
+    .bean-rating { display: flex; gap: 8px; }
     .bean-score {
       width: 30px;
       height: 30px;
@@ -339,12 +325,72 @@
     .bean-score svg { width: 21px; height: 21px; }
     .bean-score.active,
     .bean-score:hover { color: #5d3d2e; }
-    .review-drink-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 9px; }
-    .decaf-option { min-height: 36px; display: flex; align-items: center; gap: 6px; color: var(--clay); font-size: 10px; white-space: nowrap; }
-    .decaf-option input { accent-color: #5d3d2e; }
-    .price-wrap { position: relative; }
-    .price-wrap .review-input { padding-right: 35px; }
-    .price-currency { position: absolute; top: 11px; right: 10px; color: var(--muted); font-size: 10px; pointer-events: none; }
+    .drink-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+    .drink-option {
+      position: relative;
+      min-width: 0;
+      min-height: 76px;
+      display: grid;
+      grid-template-rows: 45px auto;
+      justify-items: center;
+      align-items: center;
+      padding: 5px 3px 6px;
+      border: 1px solid #e7dfd4;
+      border-radius: 10px;
+      color: var(--clay);
+      background: #f6f2eb;
+      cursor: pointer;
+      transition: border-color .16s ease, background .16s ease, transform .16s ease;
+    }
+    .drink-option:hover { transform: translateY(-1px); border-color: #c6b5a3; }
+    .drink-option.selected { border-color: #815e48; background: #eee5d9; box-shadow: inset 0 0 0 1px rgba(129, 94, 72, .12); }
+    .drink-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .drink-option:focus-within { outline: 2px solid #afa089; outline-offset: 2px; }
+    .drink-art { width: 43px; height: 43px; overflow: visible; }
+    .drink-name { color: var(--espresso); font-size: 9px; line-height: 1.1; text-align: center; }
+    .review-extras { display: flex; align-items: center; justify-content: space-between; min-height: 66px; }
+    .decaf-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 11px;
+      border: 1px solid #e3d9cb;
+      border-radius: 999px;
+      color: var(--clay);
+      background: #f6f2eb;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+    .decaf-option input { width: 14px; height: 14px; margin: 0; accent-color: #5d3d2e; }
+    .price-circle {
+      width: 64px;
+      height: 64px;
+      display: grid;
+      grid-template-rows: 12px 22px 10px;
+      align-content: center;
+      justify-items: center;
+      border: 1px solid #d9cbbc;
+      border-radius: 50%;
+      color: var(--muted);
+      background: #eee8dc;
+      cursor: text;
+    }
+    .price-caption { font-size: 8px; line-height: 1; }
+    .price-circle input {
+      width: 48px;
+      min-height: 22px;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      color: var(--espresso);
+      background: transparent;
+      font: 600 14px/1 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-align: center;
+      appearance: textfield;
+    }
+    .price-circle input::-webkit-inner-spin-button,
+    .price-circle input::-webkit-outer-spin-button { margin: 0; appearance: none; }
+    .price-currency { font-size: 8px; line-height: 1; }
     .photo-pick { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; cursor: pointer; }
     .photo-pick input { display: none; }
     .photo-button { padding: 7px 10px; border: 1px solid #e2d9cd; border-radius: 8px; color: var(--roast); background: #f4f0e7; }
@@ -362,19 +408,18 @@
     .submit-review:disabled { opacity: .65; cursor: wait; }
 
     .pin {
-      width: 28px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       display: grid;
       place-items: center;
-      border: 1.5px solid #f4f0e7;
-      border-radius: 50% 50% 50% 4px;
-      color: #fffaf2;
-      background: #5d3d2e;
-      box-shadow: 0 2px 6px rgba(53, 36, 26, .26);
-      transform: rotate(-45deg);
+      color: #5d3d2e;
+      filter: drop-shadow(0 2px 3px rgba(53, 36, 26, .32));
     }
-    .pin.visited { color: #3b271f; background: #afa089; }
-    .pin svg { width: 16px; height: 16px; transform: rotate(45deg); }
+    .pin.visited { color: #afa089; }
+    .pin svg { width: 27px; height: 27px; transform: rotate(-24deg); }
+    .coffee-marker-wrapper,
+    .cluster-marker-wrapper { border: 0; background: transparent; }
+    .pin.visited svg path:nth-child(2) { stroke: #5d3d2e; }
     .cluster {
       width: 36px;
       height: 36px;
@@ -393,13 +438,12 @@
         top: 10px;
         left: 10px;
         right: 10px;
-        height: 42px;
+        height: 46px;
         gap: 10px;
       }
-      .brand { height: 42px; flex: 0 0 34px; justify-content: flex-start; }
-      .brand-logo { width: 30px; height: 42px; }
-      .search-control.open { flex-basis: min(290px, calc(100vw - 86px)); width: min(290px, calc(100vw - 86px)); }
-      .map-status { top: 60px; left: 12px; }
+      .brand { width: 46px; height: 46px; flex: 0 0 46px; border-radius: 12px; }
+      .brand-logo { width: 36px; height: 42px; }
+      .search-control.open { flex-basis: min(290px, calc(100vw - 96px)); width: min(290px, calc(100vw - 96px)); }
       .map-filters {
         left: 12px;
         right: 12px;
@@ -441,8 +485,6 @@
     </div>
   </header>
 
-  <div class="map-status" id="mapStatus">Завантаження…</div>
-
   <nav class="map-filters" aria-label="Фільтр кав’ярень">
     <button class="filter active" data-filter="all">Усі</button>
     <button class="filter" data-filter="visited">Відвідані</button>
@@ -459,7 +501,7 @@
 
   <section class="cafe-card" id="cafeCard" aria-live="polite">
     <div class="cafe-card-head">
-      <div><h1 class="cafe-title" id="cafeName"></h1><p class="cafe-address" id="cafeAddress"></p></div>
+      <div><h1 class="cafe-title" id="cafeName"></h1><p class="cafe-address" id="cafeAddress" hidden></p></div>
       <button class="close-card" id="closeCard" aria-label="Закрити">×</button>
     </div>
     <button class="visit-toggle" id="visitToggle"></button>
@@ -470,9 +512,6 @@
     <form class="review-form" id="reviewForm">
       <h2>Твій відгук</h2>
       <div class="review-fields">
-        <label class="review-label">Ім’я
-          <input class="review-input" id="reviewAuthor" name="author" maxlength="32" autocomplete="name" placeholder="Як до тебе звертатись?" required>
-        </label>
         <fieldset class="rating-field">
           <legend>Оцінка</legend>
           <div class="bean-rating" id="beanRating" role="group" aria-label="Оцінка від 1 до 5 зерняток">
@@ -484,19 +523,49 @@
           </div>
           <input id="reviewRating" name="rating" type="hidden">
         </fieldset>
-        <div class="review-drink-row">
-          <label class="review-label">Напій
-            <select class="review-select" id="reviewDrink" name="drink" required>
-              <option value="" disabled selected>Обрати напій</option>
-              <option>Фільтр</option><option>Лате</option><option>Капучино</option>
-              <option>Флет вайт</option><option>Американо</option><option>Еспресо</option><option>Інший</option>
-            </select>
-          </label>
+        <fieldset class="rating-field">
+          <legend>Напій</legend>
+          <div class="drink-picker" role="radiogroup" aria-label="Обрати напій">
+            <label class="drink-option">
+              <input type="radio" name="drink" value="Фільтр" required>
+              <svg class="drink-art" viewBox="0 0 48 48" aria-hidden="true"><path d="M15 7h18l-2.2 29.5a4 4 0 0 1-4 3.5h-5.6a4 4 0 0 1-4-3.5L15 7Z" fill="#e9dfd1" stroke="#5d3d2e" stroke-width="1.7"/><path d="m17.1 20.5 13.8-.2-1 14.5a2.5 2.5 0 0 1-2.5 2.2h-6.1a2.5 2.5 0 0 1-2.5-2.2l-1.7-14.3Z" fill="#815e48"/><path d="M14 7h20M17 14h14" fill="none" stroke="#5d3d2e" stroke-width="1.7" stroke-linecap="round"/><path d="M22 4h4" stroke="#afa089" stroke-width="2" stroke-linecap="round"/></svg>
+              <span class="drink-name">Фільтр</span>
+            </label>
+            <label class="drink-option">
+              <input type="radio" name="drink" value="Лате">
+              <svg class="drink-art" viewBox="0 0 48 48" aria-hidden="true"><path d="M13 8h22l-2 31H15L13 8Z" fill="#e8dfd1" stroke="#5d3d2e" stroke-width="1.7"/><path d="m14.2 22 19.6-.2-.8 13.4H15.2L14.2 22Z" fill="#bdbaa9"/><path d="m14.6 18.5 20-.2-.6 5.2-19 .2-.4-5.2Z" fill="#815e48"/><path d="M13 8h22M18 13h12" fill="none" stroke="#5d3d2e" stroke-width="1.7" stroke-linecap="round"/><path d="M20 29c2.2-2.5 5.8-2.5 8 0-2.2 2.5-5.8 2.5-8 0Z" fill="#f4f0e7" opacity=".9"/></svg>
+              <span class="drink-name">Лате</span>
+            </label>
+            <label class="drink-option">
+              <input type="radio" name="drink" value="Капучино">
+              <svg class="drink-art" viewBox="0 0 48 48" aria-hidden="true"><path d="M10 19h25l-2.2 17a4 4 0 0 1-4 3.5h-9.6a4 4 0 0 1-4-3.5L10 19Z" fill="#e9dfd1" stroke="#5d3d2e" stroke-width="1.7"/><path d="M35 22h3a5 5 0 0 1 0 10h-5" fill="none" stroke="#5d3d2e" stroke-width="1.7"/><ellipse cx="22.5" cy="19" rx="12.5" ry="5" fill="#f4f0e7" stroke="#5d3d2e" stroke-width="1.7"/><path d="M22 17c2-2 5-1 5 1.1 0 2.5-4.7 3.2-7 1.3-2.1-1.7-.3-4 2-4" fill="none" stroke="#815e48" stroke-width="1.4" stroke-linecap="round"/></svg>
+              <span class="drink-name">Капучино</span>
+            </label>
+            <label class="drink-option">
+              <input type="radio" name="drink" value="Флет вайт">
+              <svg class="drink-art" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 21h29l-2.5 13a5 5 0 0 1-4.9 4H15.4a5 5 0 0 1-4.9-4L8 21Z" fill="#e9dfd1" stroke="#5d3d2e" stroke-width="1.7"/><path d="M37 23h2a4.5 4.5 0 0 1 0 9h-5" fill="none" stroke="#5d3d2e" stroke-width="1.7"/><ellipse cx="22.5" cy="21" rx="14.5" ry="5.2" fill="#f4f0e7" stroke="#5d3d2e" stroke-width="1.7"/><path d="M23 24c-1-3 0-5 1-6 1 1 2 3 1 6m-1-2-4-2m4 2 4-2m-4 2-3 3m3-3 3 3" fill="none" stroke="#815e48" stroke-width="1.3" stroke-linecap="round"/></svg>
+              <span class="drink-name">Флет вайт</span>
+            </label>
+            <label class="drink-option">
+              <input type="radio" name="drink" value="Американо">
+              <svg class="drink-art" viewBox="0 0 48 48" aria-hidden="true"><path d="M10 15h25l-2.2 21a4 4 0 0 1-4 3.5h-9.6a4 4 0 0 1-4-3.5L13 15Z" fill="#e9dfd1" stroke="#5d3d2e" stroke-width="1.7"/><path d="M35 19h2.5a5 5 0 0 1 0 10h-4" fill="none" stroke="#5d3d2e" stroke-width="1.7"/><ellipse cx="22.5" cy="15" rx="12.5" ry="4.4" fill="#815e48" stroke="#5d3d2e" stroke-width="1.7"/><path d="M18 14.7c2-.9 7.5-.9 9.5 0" fill="none" stroke="#c49b73" stroke-width="1.2" stroke-linecap="round"/></svg>
+              <span class="drink-name">Американо</span>
+            </label>
+            <label class="drink-option">
+              <input type="radio" name="drink" value="Еспресо">
+              <svg class="drink-art" viewBox="0 0 48 48" aria-hidden="true"><path d="M12 23h24l-1.8 12a4 4 0 0 1-4 3.4h-12a4 4 0 0 1-4-3.4L12 23Z" fill="#e9dfd1" stroke="#5d3d2e" stroke-width="1.7"/><path d="M36 25h2a4 4 0 0 1 0 8h-3" fill="none" stroke="#5d3d2e" stroke-width="1.7"/><ellipse cx="24" cy="23" rx="12" ry="4.3" fill="#5d3d2e" stroke="#5d3d2e" stroke-width="1.7"/><path d="M19 22.5c2-1.1 8-1.1 10 0" fill="none" stroke="#c49b73" stroke-width="1.2" stroke-linecap="round"/><path d="M9 40h30" stroke="#815e48" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span class="drink-name">Еспресо</span>
+            </label>
+          </div>
+        </fieldset>
+        <div class="review-extras">
           <label class="decaf-option"><input id="reviewDecaf" type="checkbox"> Декаф</label>
+          <label class="price-circle" aria-label="Ціна у гривнях">
+            <span class="price-caption">Ціна</span>
+            <input id="reviewPrice" type="number" min="0" max="3000" step="1" inputmode="numeric" placeholder="—" aria-label="Сума в гривнях">
+            <span class="price-currency">грн</span>
+          </label>
         </div>
-        <label class="review-label">Ціна
-          <span class="price-wrap"><input class="review-input" id="reviewPrice" type="number" min="0" max="3000" step="1" inputmode="numeric" placeholder="Не вказувати"><span class="price-currency">грн</span></span>
-        </label>
         <label class="review-label">Короткий відгук
           <textarea class="review-textarea" id="reviewText" maxlength="280" placeholder="Що сподобалось у напої?" required></textarea>
         </label>
@@ -511,10 +580,9 @@
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     (() => {
-      const CAFE_CACHE = "decaf-osm-cafes-v2";
+      const CAFE_CACHE = "decaf-osm-cafes-v3";
       const VISITED_KEY = "decaf-visited-v1";
       const REVIEWS_KEY = "decaf-reviews-v1";
-      const AUTHOR_KEY = "decaf-review-author-v1";
       const KYIV_AREA = 3600421866;
       const KYIV_RELATION = 421866;
       const KYIV_CENTER = [50.4501, 30.5234];
@@ -593,14 +661,6 @@
         }
       }
 
-      function readReviewAuthor() {
-        try {
-          return localStorage.getItem(AUTHOR_KEY) || "";
-        } catch {
-          return "";
-        }
-      }
-
       function saveVisited() {
         localStorage.setItem(VISITED_KEY, JSON.stringify(Array.from(visited)));
       }
@@ -614,17 +674,13 @@
         });
       }
 
-      function updateCount() {
-        const count = placesToShow().length;
-        byId("mapStatus").textContent = cafes.length
-          ? count.toLocaleString("uk-UA") + " місць"
-          : "Завантаження…";
-      }
-
       function cafeAddress(tags) {
         const street = tags["addr:street"] || tags["addr:place"] || tags["addr:suburb"] || tags["addr:district"];
         const number = tags["addr:housenumber"];
-        return street ? street + (number ? ", " + number : "") : (tags["addr:full"] || "Київ");
+        if (street) return street + (number ? ", " + number : "");
+        return (tags["addr:full"] || "")
+          .replace(/(?:,\s*)?(?:м\.?\s*)?(?:Київ|Kyiv)(?:,\s*Україна)?/gi, "")
+          .replace(/^[,\s]+|[,\s]+$/g, "");
       }
 
       function parseCafeData(elements) {
@@ -635,7 +691,15 @@
           if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
 
           const tags = place.tags || {};
-          if (tags.amenity !== "cafe" && tags.shop !== "coffee") return;
+          if (tags.amenity !== "cafe") return;
+          if (
+            tags.disused ||
+            tags["disused:amenity"] ||
+            tags.abandoned ||
+            tags["abandoned:amenity"] ||
+            tags["cafe:state"] === "closed" ||
+            tags.lifecycle === "closed"
+          ) return;
           const name = (tags.name || tags["name:uk"] || tags.brand || "Кав’ярня").trim();
           const key = name.toLocaleLowerCase("uk") + "|" + lat.toFixed(4) + "|" + lon.toFixed(4);
           if (unique.has(key)) return;
@@ -724,8 +788,8 @@
         L.polygon(maskRings, {
           pane: "cityMaskPane",
           stroke: false,
-          fillColor: "#bdbaa9",
-          fillOpacity: 1,
+          fillColor: "#3b271f",
+          fillOpacity: .42,
           fillRule: "evenodd",
           interactive: false
         }).addTo(cityMaskLayer);
@@ -771,13 +835,13 @@
 
       function pinIcon(cafe) {
         const state = visited.has(cafe.id) ? "pin visited" : "pin";
-        const svg = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8h9.8l-.8 6.1a2 2 0 0 1-2 1.7H7.3a2 2 0 0 1-2-1.7L4.5 8Z"/><path d="M14.2 9h1.2a2 2 0 0 1 0 4h-1.8M7 5.8c0-1 1-1 1-2M11 5.8c0-1 1-1 1-2"/></svg>';
-        return L.divIcon({ className: "", html: '<span class="' + state + '">' + svg + "</span>", iconSize: [28, 32], iconAnchor: [14, 16] });
+        const svg = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M25.6 4.4c4.2 3.5 4 10.6-.5 16.8-4.5 6.3-12.1 9.3-16.5 6.2-4.4-3.1-4-10.3.4-16.4 4.5-6.2 12.2-9.8 16.6-6.6Z" fill="currentColor"/><path d="M8.1 25.5C15.8 20.7 20.8 12.2 25 5.2" fill="none" stroke="#f4f0e7" stroke-width="2" stroke-linecap="round"/></svg>';
+        return L.divIcon({ className: "coffee-marker-wrapper", html: '<span class="' + state + '">' + svg + "</span>", iconSize: [30, 30], iconAnchor: [15, 15] });
       }
 
       function clusterIcon(count) {
         return L.divIcon({
-          className: "",
+          className: "cluster-marker-wrapper",
           html: '<span class="cluster">' + count + "</span>",
           iconSize: [36, 36],
           iconAnchor: [18, 18]
@@ -819,7 +883,6 @@
           places.forEach(addPin);
         }
 
-        updateCount();
       }
 
       function addPin(cafe) {
@@ -836,10 +899,11 @@
         selectedCafe = cafe;
         byId("cafeName").textContent = cafe.name;
         byId("cafeAddress").textContent = cafe.address;
+        byId("cafeAddress").hidden = !cafe.address;
         byId("reviewForm").reset();
-        byId("reviewAuthor").value = readReviewAuthor();
         byId("photoFileName").textContent = "Фото необов’язкове";
         byId("reviewStatus").textContent = "";
+        document.querySelectorAll(".drink-option").forEach((option) => option.classList.remove("selected"));
         setReviewRating(0);
         renderCafeReviews();
         updateVisitButton();
@@ -893,14 +957,11 @@
 
           const head = document.createElement("div");
           head.className = "review-item-head";
-          const author = document.createElement("span");
-          author.className = "review-author";
-          author.textContent = review.author || "Гість";
           const date = document.createElement("time");
           date.className = "review-date";
           date.dateTime = new Date(Number(review.createdAt)).toISOString();
           date.textContent = new Date(Number(review.createdAt)).toLocaleDateString("uk-UA", { day: "numeric", month: "short", year: "numeric" });
-          head.append(author, date);
+          head.append(date);
 
           const rating = document.createElement("div");
           rating.className = "review-beans";
@@ -923,7 +984,7 @@
             const photo = document.createElement("img");
             photo.className = "review-photo";
             photo.src = review.photo;
-            photo.alt = "Фото з відгуку від " + (review.author || "гостя");
+            photo.alt = "Фото з відгуку";
             photo.loading = "lazy";
             item.append(photo);
           }
@@ -965,7 +1026,7 @@
           if (cityBoundary.length && Date.now() - cafesCachedAt < CACHE_TTL) return;
         }
 
-        const query = '[out:json][timeout:25];area(' + KYIV_AREA + ')->.kyiv;nwr["amenity"="cafe"](area.kyiv)->.cafes;nwr["shop"="coffee"](area.kyiv)->.coffee;relation(' + KYIV_RELATION + ')->.boundary;.cafes out center tags;.coffee out center tags;.boundary out geom;';
+        const query = '[out:json][timeout:25];area(' + KYIV_AREA + ')->.kyiv;nwr["amenity"="cafe"](area.kyiv)->.cafes;relation(' + KYIV_RELATION + ')->.boundary;.cafes out center tags;.boundary out geom;';
 
         for (const endpoint of OVERPASS_URLS) {
           const controller = new AbortController();
@@ -1000,11 +1061,6 @@
           }
         }
 
-        if (cafes.length) {
-          byId("mapStatus").textContent = cafes.length.toLocaleString("uk-UA") + " місць · збережено";
-        } else {
-          byId("mapStatus").textContent = "Кав’ярні тимчасово недоступні";
-        }
       }
 
       document.querySelectorAll("[data-filter]").forEach((button) => {
@@ -1057,7 +1113,11 @@
         byId("search").focus();
       });
 
-      byId("reviewAuthor").value = readReviewAuthor();
+      document.querySelectorAll('input[name="drink"]').forEach((input) => {
+        input.addEventListener("change", () => {
+          document.querySelectorAll(".drink-option").forEach((option) => option.classList.toggle("selected", option.contains(input) && input.checked));
+        });
+      });
       document.querySelectorAll(".bean-score").forEach((button) => {
         button.addEventListener("click", () => setReviewRating(button.dataset.rating));
       });
@@ -1080,14 +1140,12 @@
         submit.disabled = true;
         byId("reviewStatus").textContent = "Зберігаю…";
         try {
-          const author = byId("reviewAuthor").value.trim();
           const review = {
             id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
             cafeId: selectedCafe.id,
             cafeName: selectedCafe.name,
-            author,
             rating,
-            drink: byId("reviewDrink").value,
+            drink: document.querySelector('input[name="drink"]:checked')?.value || "",
             decaf: byId("reviewDecaf").checked,
             price: byId("reviewPrice").value === "" ? null : Number(byId("reviewPrice").value),
             text: byId("reviewText").value.trim(),
@@ -1101,9 +1159,8 @@
             byId("reviewStatus").textContent = "Не вистачає місця для збереження фото. Спробуй інше фото.";
             return;
           }
-          try { localStorage.setItem(AUTHOR_KEY, author); } catch { }
           byId("reviewForm").reset();
-          byId("reviewAuthor").value = author;
+          document.querySelectorAll(".drink-option").forEach((option) => option.classList.remove("selected"));
           byId("photoFileName").textContent = "Фото необов’язкове";
           setReviewRating(0);
           renderCafeReviews();
@@ -1125,7 +1182,6 @@
       });
 
       if (!window.L) {
-        byId("mapStatus").textContent = "Мапа недоступна";
         return;
       }
 
