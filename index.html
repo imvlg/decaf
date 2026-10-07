@@ -51,38 +51,32 @@
       top: 10px;
       left: 18px;
       right: 18px;
-      height: 54px;
+      min-height: 60px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 0;
+      gap: 8px;
+      padding: 5px 9px;
+      border: 1px solid rgba(93, 61, 46, .14);
+      border-radius: 19px;
+      background: rgba(248, 245, 238, .95);
+      box-shadow: 0 8px 28px rgba(58, 39, 28, .14);
+      backdrop-filter: blur(16px);
       pointer-events: none;
     }
 
     .brand {
-      position: relative;
-      flex: 0 0 54px;
-      height: 68px;
+      flex: 0 0 43px;
+      height: 48px;
       display: flex;
       align-items: center;
       justify-content: center;
       text-decoration: none;
       pointer-events: auto;
     }
-    .brand::before {
-      content: "";
-      position: absolute;
-      inset: -3px;
-      background: #f4f0e7;
-      clip-path: polygon(50% 0, 63% 1%, 76% 4%, 87% 10%, 95% 19%, 100% 30%, 99% 41%, 95% 52%, 87% 63%, 78% 74%, 68% 84%, 58% 94%, 50% 100%, 42% 94%, 32% 84%, 22% 74%, 13% 63%, 5% 52%, 1% 41%, 0 30%, 5% 19%, 13% 10%, 24% 4%, 37% 1%);
-      filter: drop-shadow(0 4px 7px rgba(58, 39, 28, .22));
-    }
     .brand-logo {
-      position: relative;
-      z-index: 1;
       display: block;
-      width: 49px;
-      height: 65px;
+      width: 42px;
+      height: 48px;
       object-fit: contain;
     }
 
@@ -164,13 +158,11 @@
       position: static;
       flex: 0 0 auto;
       display: flex;
-      gap: 3px;
+      gap: 2px;
       padding: 3px;
-      border: 1px solid rgba(255, 253, 248, .9);
-      border-radius: 11px;
-      background: rgba(255, 253, 248, .94);
-      box-shadow: 0 4px 12px rgba(58, 39, 28, .1);
-      backdrop-filter: blur(14px);
+      border: 0;
+      border-radius: 999px;
+      background: #e9e2d6;
       pointer-events: auto;
     }
     .filter {
@@ -184,21 +176,41 @@
     }
     .filter.active { color: #fffaf2; background: var(--roast); }
 
+    .reviews-toggle {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 10px;
+      border: 1px solid rgba(93, 61, 46, .14);
+      border-radius: 999px;
+      color: var(--roast);
+      background: rgba(255, 253, 248, .76);
+      font-size: 10px;
+      white-space: nowrap;
+      pointer-events: auto;
+    }
+    .reviews-toggle svg { width: 14px; height: 14px; }
+    .reviews-toggle[aria-expanded="true"] { color: #fffaf2; border-color: var(--roast); background: var(--roast); }
+
     .cafe-card {
       position: fixed;
       z-index: 460;
       right: 22px;
       bottom: 22px;
       width: 360px;
-      max-height: min(78vh, 650px);
+      max-height: min(82vh, 690px);
       display: none;
-      padding: 16px;
-      border: 1px solid rgba(255, 253, 248, .9);
-      border-radius: 15px;
-      background: rgba(255, 253, 248, .96);
-      box-shadow: 0 12px 36px rgba(58, 39, 28, .16);
+      padding: 18px;
+      border: 1px solid rgba(93, 61, 46, .12);
+      border-radius: 21px;
+      background: rgba(248, 245, 238, .98);
+      box-shadow: 0 18px 50px rgba(45, 30, 22, .24), inset 0 1px rgba(255, 255, 255, .74);
       backdrop-filter: blur(16px);
       overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #c8b6a2 transparent;
     }
     .cafe-card.open { display: block; }
     .cafe-card-head { display: flex; align-items: flex-start; gap: 12px; }
@@ -261,9 +273,11 @@
       line-height: 1.5;
     }
     .review-item {
-      padding: 10px;
-      border-radius: 10px;
-      background: #f4f0e7;
+      padding: 12px;
+      border: 1px solid rgba(93, 61, 46, .08);
+      border-radius: 13px;
+      background: rgba(255, 253, 248, .78);
+      box-shadow: 0 3px 10px rgba(58, 39, 28, .035);
     }
     .review-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .review-date { color: var(--muted); font-size: 9px; }
@@ -312,12 +326,12 @@
     .drink-option {
       position: relative;
       min-width: 0;
-      min-height: 89px;
+      min-height: 76px;
       display: grid;
-      grid-template-rows: 58px auto;
+      grid-template-rows: 46px auto;
       justify-items: center;
       align-items: center;
-      padding: 4px 3px 6px;
+      padding: 3px 3px 5px;
       border: 1px solid #e7dfd4;
       border-radius: 10px;
       color: var(--clay);
@@ -327,9 +341,24 @@
     }
     .drink-option:hover { transform: translateY(-1px); border-color: #c6b5a3; }
     .drink-option.selected { border-color: #815e48; background: #eee5d9; box-shadow: inset 0 0 0 1px rgba(129, 94, 72, .12); }
+    .drink-option.selected::after {
+      content: "✓";
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 15px;
+      height: 15px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #fffaf2;
+      background: var(--roast);
+      font-size: 9px;
+      line-height: 1;
+    }
     .drink-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
     .drink-option:focus-within { outline: 2px solid #afa089; outline-offset: 2px; }
-    .drink-art { display: block; width: 62px; height: 58px; object-fit: contain; }
+    .drink-art { display: block; width: 50px; height: 45px; object-fit: contain; }
     .drink-name { color: var(--espresso); font-size: 9px; line-height: 1.1; text-align: center; }
     .review-extras { display: flex; align-items: center; justify-content: space-between; min-height: 66px; }
     .decaf-option {
@@ -346,36 +375,69 @@
     }
     .decaf-option input { width: 14px; height: 14px; margin: 0; accent-color: #5d3d2e; }
     .price-circle {
+      position: relative;
       width: 64px;
       height: 64px;
-      display: grid;
-      grid-template-rows: 12px 22px 10px;
-      align-content: center;
-      justify-items: center;
+      display: block;
       border: 1px solid #d9cbbc;
       border-radius: 50%;
       color: var(--muted);
       background: #eee8dc;
       cursor: text;
+      transition: border-color .15s ease, box-shadow .15s ease;
     }
-    .price-caption { font-size: 8px; line-height: 1; }
+    .price-circle:focus-within { border-color: #815e48; box-shadow: 0 0 0 3px rgba(129, 94, 72, .12); }
+    .price-caption { position: absolute; top: 9px; left: 0; right: 0; font-size: 8px; line-height: 1; text-align: center; }
     .price-circle input {
-      width: 48px;
+      position: absolute;
+      top: 50%;
+      left: 5px;
+      width: 52px;
       height: 22px;
-      min-height: 22px;
-      padding: 0;
+      padding: 0 2px;
       border: 0;
       outline: 0;
+      box-shadow: none;
       color: var(--espresso);
       background: transparent;
-      display: block;
       font: 600 14px/22px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       text-align: center;
-      appearance: textfield;
+      transform: translateY(-50%);
     }
-    .price-circle input::-webkit-inner-spin-button,
-    .price-circle input::-webkit-outer-spin-button { margin: 0; appearance: none; }
-    .price-currency { font-size: 8px; line-height: 1; }
+    .price-currency { position: absolute; bottom: 8px; left: 0; right: 0; font-size: 8px; line-height: 1; text-align: center; }
+
+    .reviews-drawer {
+      position: fixed;
+      z-index: 490;
+      top: 82px;
+      right: 18px;
+      width: min(430px, calc(100vw - 36px));
+      max-height: calc(100dvh - 100px);
+      display: none;
+      padding: 18px;
+      border: 1px solid rgba(93, 61, 46, .12);
+      border-radius: 21px;
+      background: rgba(248, 245, 238, .98);
+      box-shadow: 0 18px 50px rgba(45, 30, 22, .24), inset 0 1px rgba(255, 255, 255, .74);
+      backdrop-filter: blur(16px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #c8b6a2 transparent;
+    }
+    .reviews-drawer.open { display: block; }
+    .reviews-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 13px; }
+    .reviews-drawer-head h2 { margin: 0; color: var(--espresso); font: 20px/1.2 Georgia, "Times New Roman", serif; }
+    .all-review-list { display: grid; gap: 9px; }
+    .all-review-item {
+      padding: 12px;
+      border: 1px solid rgba(93, 61, 46, .08);
+      border-radius: 13px;
+      background: rgba(255, 253, 248, .82);
+    }
+    .all-review-cafe { margin: 0; color: var(--espresso); font-size: 12px; font-weight: 650; }
+    .all-review-date { color: var(--muted); font-size: 9px; }
+    .all-review-open { margin-top: 9px; padding: 5px 9px; border: 1px solid #e0d4c5; border-radius: 999px; color: var(--roast); background: transparent; font-size: 9px; }
+    .all-review-open:hover { background: #f0e9de; }
     .photo-pick { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; cursor: pointer; }
     .photo-pick input { display: none; }
     .photo-button { padding: 7px 10px; border: 1px solid #e2d9cd; border-radius: 8px; color: var(--roast); background: #f4f0e7; }
@@ -421,21 +483,24 @@
     @media (max-width: 700px) {
       .topbar {
         top: 8px;
-        left: 10px;
-        right: 10px;
-        height: 50px;
-        gap: 7px;
+        left: 8px;
+        right: 8px;
+        min-height: 56px;
+        gap: 5px;
+        padding: 4px 6px;
+        border-radius: 17px;
       }
-      .brand { width: 46px; height: 60px; flex-basis: 46px; }
-      .brand::before { inset: -3px; }
-      .brand-logo { width: 42px; height: 57px; }
-      .map-filters { gap: 2px; padding: 2px; }
-      .filter { min-height: 32px; padding: 0 8px; font-size: 10px; }
+      .brand { flex-basis: 38px; height: 44px; }
+      .brand-logo { width: 38px; height: 44px; }
+      .map-filters { gap: 1px; padding: 2px; }
+      .filter { min-height: 31px; padding: 0 6px; font-size: 9px; }
+      .reviews-toggle { min-height: 33px; gap: 4px; padding: 0 7px; font-size: 9px; }
+      .reviews-toggle svg { width: 13px; height: 13px; }
       .search-control.open {
         position: absolute;
         top: 50%;
-        left: 50px;
-        right: 0;
+        left: 7px;
+        right: 7px;
         z-index: 5;
         width: auto;
         height: 42px;
@@ -445,14 +510,20 @@
       .cafe-card {
         left: 10px;
         right: 10px;
-        bottom: calc(68px + env(safe-area-inset-bottom));
+        bottom: calc(10px + env(safe-area-inset-bottom));
         width: auto;
-        max-height: calc(100dvh - 150px);
-        padding: 14px;
+        max-height: calc(100dvh - 84px);
+        padding: 16px;
+        border-radius: 20px;
       }
-      .leaflet-control-attribution {
-        margin-bottom: calc(60px + env(safe-area-inset-bottom)) !important;
-        font-size: 8px !important;
+      .reviews-drawer {
+        top: 74px;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-height: calc(100dvh - 86px);
+        padding: 16px;
+        border-radius: 20px;
       }
     }
   </style>
@@ -470,6 +541,11 @@
       <button class="filter" data-filter="visited">Відвідані</button>
     </nav>
 
+    <button class="reviews-toggle" id="reviewsToggle" type="button" aria-expanded="false" aria-controls="reviewsDrawer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4.5h12a1.5 1.5 0 0 1 1.5 1.5v13L16 16.5l-4 2.5-4-2.5L4.5 19V6A1.5 1.5 0 0 1 6 4.5Z"/><path d="M8 8.5h8M8 11.5h8"/></svg>
+      Відгуки
+    </button>
+
     <div class="search-control" id="searchControl">
       <input id="search" type="search" placeholder="Кав’ярня" autocomplete="off" aria-label="Пошук кав’ярні">
       <button class="clear-search" id="clearSearch" type="button" aria-label="Очистити пошук">×</button>
@@ -480,6 +556,14 @@
       </button>
     </div>
   </header>
+
+  <section class="reviews-drawer" id="reviewsDrawer" aria-label="Усі відгуки">
+    <div class="reviews-drawer-head">
+      <h2>Відгуки</h2>
+      <button class="close-card" id="closeReviews" type="button" aria-label="Закрити відгуки">×</button>
+    </div>
+    <div class="all-review-list" id="allReviewList"></div>
+  </section>
 
   <section class="cafe-card" id="cafeCard" aria-live="polite">
     <div class="cafe-card-head">
@@ -506,8 +590,8 @@
           <input id="reviewRating" name="rating" type="hidden">
         </fieldset>
         <fieldset class="rating-field">
-          <legend>Спробувала</legend>
-          <div class="drink-picker" aria-label="Напої, які куштувала">
+          <legend>Напої</legend>
+          <div class="drink-picker" aria-label="Напої">
             <label class="drink-option">
               <input type="checkbox" name="drink" value="Фільтр">
               <img class="drink-art" src="./assets/drinks/filter.svg" alt="" draggable="false">
@@ -544,12 +628,12 @@
           <label class="decaf-option"><input id="reviewDecaf" type="checkbox"> Декаф</label>
           <label class="price-circle" aria-label="Ціна у гривнях">
             <span class="price-caption">Ціна</span>
-            <input id="reviewPrice" type="number" min="0" max="3000" step="1" inputmode="numeric" placeholder="—" aria-label="Сума в гривнях">
+            <input id="reviewPrice" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{1,4}" placeholder="—" aria-label="Сума в гривнях">
             <span class="price-currency">грн</span>
           </label>
         </div>
-        <label class="review-label">Короткий відгук
-          <textarea class="review-textarea" id="reviewText" maxlength="280" placeholder="Що сподобалось у напої?" required></textarea>
+        <label class="review-label">Відгук
+          <textarea class="review-textarea" id="reviewText" maxlength="280" placeholder="Текстовий відгук" required></textarea>
         </label>
         <label class="photo-pick"><input id="reviewPhoto" type="file" accept="image/*"><span class="photo-button">Додати фото</span><span id="photoFileName">Фото необов’язкове</span></label>
         <p class="review-status" id="reviewStatus" aria-live="polite"></p>
@@ -562,7 +646,7 @@
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     (() => {
-      const CAFE_CACHE = "decaf-osm-cafes-v3";
+      const CAFE_CACHE = "decaf-osm-cafes-v4";
       const VISITED_KEY = "decaf-visited-v1";
       const REVIEWS_KEY = "decaf-reviews-v1";
       const KYIV_AREA = 3600421866;
@@ -677,12 +761,22 @@
           if (
             tags.disused ||
             tags["disused:amenity"] ||
+            tags["disused:shop"] ||
             tags.abandoned ||
             tags["abandoned:amenity"] ||
+            tags["abandoned:shop"] ||
+            tags.vacant ||
+            tags.demolished ||
             tags["cafe:state"] === "closed" ||
-            tags.lifecycle === "closed"
+            tags.lifecycle === "closed" ||
+            tags.closed === "yes" ||
+            tags.permanently_closed === "yes" ||
+            tags.end_date ||
+            tags.access === "private" ||
+            tags.opening_hours === "closed"
           ) return;
-          const name = (tags.name || tags["name:uk"] || tags.brand || "Кав’ярня").trim();
+          const name = (tags.name || tags["name:uk"] || tags.brand || "").trim();
+          if (!name) return;
           const key = name.toLocaleLowerCase("uk") + "|" + lat.toFixed(4) + "|" + lon.toFixed(4);
           if (unique.has(key)) return;
 
@@ -838,7 +932,7 @@
         const places = placesToShow().filter((cafe) => visibleBounds.contains([cafe.lat, cafe.lon]));
         const zoom = map.getZoom();
 
-        if (zoom < 16) {
+        if (zoom < 19) {
           const groups = new Map();
           places.forEach((cafe) => {
             const point = map.project([cafe.lat, cafe.lon], zoom);
@@ -855,7 +949,7 @@
 
             if (group.length > 1) {
               const marker = L.marker(center, { icon: clusterIcon(group.length) });
-              marker.on("click", () => map.flyTo(center, Math.min(17, zoom + 2), { duration: .4 }));
+              marker.on("click", () => map.flyTo(center, Math.min(19, zoom + 2), { duration: .4 }));
               marker.addTo(cafePins);
             } else {
               addPin(group[0]);
@@ -878,6 +972,7 @@
       }
 
       function selectCafe(cafe) {
+        setReviewsOpen(false);
         selectedCafe = cafe;
         byId("cafeName").textContent = cafe.name;
         byId("cafeAddress").textContent = cafe.address;
@@ -918,6 +1013,26 @@
         });
       }
 
+      function reviewDrinks(review) {
+        if (Array.isArray(review.drinks)) return review.drinks;
+        return review.drink ? [review.drink] : [];
+      }
+
+      function makeReviewBeans(value) {
+        const rating = document.createElement("div");
+        rating.className = "review-beans";
+        rating.setAttribute("aria-label", "Оцінка " + value + " з 5");
+        rating.innerHTML = Array.from({ length: 5 }, (_, index) => {
+          const color = index < Number(value) ? "#815e48" : "#d6cbbc";
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="' + color + '"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg>';
+        }).join("");
+        return rating;
+      }
+
+      function reviewDetails(review) {
+        return [...reviewDrinks(review), review.decaf ? "декаф" : "", review.price != null ? review.price + " грн" : ""].filter(Boolean);
+      }
+
       function renderCafeReviews() {
         const list = byId("reviewList");
         list.replaceChildren();
@@ -945,19 +1060,10 @@
           date.textContent = new Date(Number(review.createdAt)).toLocaleDateString("uk-UA", { day: "numeric", month: "short", year: "numeric" });
           head.append(date);
 
-          const rating = document.createElement("div");
-          rating.className = "review-beans";
-          rating.setAttribute("aria-label", "Оцінка " + review.rating + " з 5");
-          rating.innerHTML = Array.from({ length: 5 }, (_, index) => {
-            const color = index < Number(review.rating) ? "#815e48" : "#d6cbbc";
-            return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="' + color + '"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#f4f0e7" stroke-width="1.3" stroke-linecap="round"/></svg>';
-          }).join("");
-
-          const drinks = Array.isArray(review.drinks) ? review.drinks : (review.drink ? [review.drink] : []);
-          const details = [...drinks, review.decaf ? "декаф" : "", review.price != null ? review.price + " грн" : ""].filter(Boolean);
+          const rating = makeReviewBeans(review.rating);
           const meta = document.createElement("p");
           meta.className = "review-meta";
-          meta.textContent = details.join(" · ");
+          meta.textContent = reviewDetails(review).join(" · ");
           const text = document.createElement("p");
           text.className = "review-text";
           text.textContent = review.text;
@@ -973,6 +1079,69 @@
           }
           list.append(item);
         });
+      }
+
+      function renderAllReviews() {
+        const list = byId("allReviewList");
+        list.replaceChildren();
+        const latestReviews = [...reviews].sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+        if (!latestReviews.length) {
+          const empty = document.createElement("p");
+          empty.className = "review-empty";
+          empty.textContent = "Тут ще немає відгуків.";
+          list.append(empty);
+          return;
+        }
+
+        latestReviews.forEach((review) => {
+          const item = document.createElement("article");
+          item.className = "all-review-item";
+
+          const head = document.createElement("div");
+          head.className = "review-item-head";
+          const cafeName = document.createElement("h3");
+          cafeName.className = "all-review-cafe";
+          cafeName.textContent = review.cafeName || "Кав’ярня";
+          const date = document.createElement("time");
+          date.className = "all-review-date";
+          date.dateTime = new Date(Number(review.createdAt)).toISOString();
+          date.textContent = new Date(Number(review.createdAt)).toLocaleDateString("uk-UA", { day: "numeric", month: "short", year: "numeric" });
+          head.append(cafeName, date);
+
+          const rating = makeReviewBeans(review.rating);
+          const meta = document.createElement("p");
+          meta.className = "review-meta";
+          meta.textContent = reviewDetails(review).join(" · ");
+          const text = document.createElement("p");
+          text.className = "review-text";
+          text.textContent = review.text;
+          item.append(head, rating, meta, text);
+
+          if (review.photo) {
+            const photo = document.createElement("img");
+            photo.className = "review-photo";
+            photo.src = review.photo;
+            photo.alt = "Фото з відгуку";
+            photo.loading = "lazy";
+            item.append(photo);
+          }
+
+          if (cafes.some((cafe) => cafe.id === review.cafeId)) {
+            const openCafe = document.createElement("button");
+            openCafe.className = "all-review-open";
+            openCafe.type = "button";
+            openCafe.dataset.cafeId = review.cafeId;
+            openCafe.textContent = "Показати на мапі";
+            item.append(openCafe);
+          }
+          list.append(item);
+        });
+      }
+
+      function setReviewsOpen(isOpen) {
+        byId("reviewsDrawer").classList.toggle("open", isOpen);
+        byId("reviewsToggle").setAttribute("aria-expanded", String(isOpen));
+        if (isOpen) renderAllReviews();
       }
 
       async function compressReviewPhoto(file) {
@@ -1009,7 +1178,7 @@
           if (cityBoundary.length && Date.now() - cafesCachedAt < CACHE_TTL) return;
         }
 
-        const query = '[out:json][timeout:25];area(' + KYIV_AREA + ')->.kyiv;nwr["amenity"="cafe"](area.kyiv)->.cafes;relation(' + KYIV_RELATION + ')->.boundary;.cafes out center tags;.boundary out geom;';
+        const query = '[out:json][timeout:25];area(' + KYIV_AREA + ')->.kyiv;(nwr["amenity"="cafe"]["name"](area.kyiv);nwr["amenity"="cafe"]["name:uk"](area.kyiv);nwr["amenity"="cafe"]["brand"](area.kyiv);)->.cafes;relation(' + KYIV_RELATION + ')->.boundary;.cafes out center tags;.boundary out geom;';
 
         for (const endpoint of OVERPASS_URLS) {
           const controller = new AbortController();
@@ -1163,6 +1332,23 @@
         }
       });
       byId("closeCard").addEventListener("click", closeCafeCard);
+      byId("reviewsToggle").addEventListener("click", () => {
+        const isOpen = byId("reviewsDrawer").classList.contains("open");
+        setReviewsOpen(!isOpen);
+      });
+      byId("closeReviews").addEventListener("click", () => setReviewsOpen(false));
+      byId("allReviewList").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-cafe-id]");
+        if (!button) return;
+        const cafe = cafes.find((item) => item.id === button.dataset.cafeId);
+        if (!cafe) return;
+        setReviewsOpen(false);
+        selectCafe(cafe);
+        map.flyTo([cafe.lat, cafe.lon], 18, { duration: .45 });
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && byId("reviewsDrawer").classList.contains("open")) setReviewsOpen(false);
+      });
       byId("visitToggle").addEventListener("click", () => {
         if (!selectedCafe) return;
         if (visited.has(selectedCafe.id)) visited.delete(selectedCafe.id);
