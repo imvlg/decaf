@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f0e7">
+  <title>de caf</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root {
+      --espresso: #3b271f;
+      --roast: #5d3d2e;
+      --clay: #815e48;
+      --cream: #f4f0e7;
+      --paper: #fffdf8;
+      --muted: #82766c;
+      --line: rgba(84, 61, 45, .15);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--espresso);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body { background: var(--cream); }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    #map {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: #e5ded2;
+    }
+
+    .leaflet-container { background: #e5ded2; }
+    .leaflet-tile-pane { filter: sepia(.46) saturate(.62) hue-rotate(-5deg) brightness(1.02); }
+    .leaflet-control-zoom { display: none; }
+    .leaflet-control-attribution {
+      padding: 3px 7px !important;
+      border-radius: 7px 0 0;
+      background: rgba(255, 253, 248, .82) !important;
+      color: #776c60 !important;
+      font-size: 9px !important;
+      backdrop-filter: blur(8px);
+    }
+    .leaflet-control-attribution a { color: var(--roast) !important; }
+
+    .topbar {
+      position: fixed;
+      z-index: 500;
+      top: 18px;
+      left: 20px;
+      right: 20px;
+      height: 66px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 8px 13px 8px 17px;
+      border: 1px solid rgba(255, 253, 248, .85);
+      border-radius: 15px;
+      background: rgba(255, 253, 248, .94);
+      box-shadow: 0 8px 28px rgba(58, 39, 28, .12);
+      backdrop-filter: blur(16px);
+    }
+
+    .brand {
+      flex: 0 0 54px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+    .brand-logo {
+      display: block;
+      width: 42px;
+      height: 48px;
+      object-fit: contain;
+    }
+
+    .search-wrap {
+      position: relative;
+      width: min(440px, 55vw);
+      height: 42px;
+      margin: 0 auto;
+    }
+    .search-icon {
+      position: absolute;
+      top: 12px;
+      left: 13px;
+      width: 17px;
+      height: 17px;
+      color: #8a7c70;
+      pointer-events: none;
+    }
+    #search {
+      width: 100%;
+      height: 100%;
+      padding: 0 38px 0 40px;
+      border: 1px solid #e7dfd4;
+      border-radius: 11px;
+      outline: none;
+      color: var(--espresso);
+      background: #f8f5ee;
+      font-size: 12px;
+    }
+    #search::placeholder { color: #9a8e82; }
+    #search:focus { border-color: #b7a48e; box-shadow: 0 0 0 3px rgba(175, 160, 137, .15); }
+    .clear-search {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: none;
+      width: 26px;
+      height: 26px;
+      border: 0;
+      border-radius: 50%;
+      color: var(--clay);
+      background: #eee8dd;
+    }
+    .clear-search.visible { display: block; }
+
+    .map-status {
+      position: fixed;
+      z-index: 450;
+      top: 98px;
+      left: 22px;
+      padding: 7px 10px;
+      border: 1px solid rgba(255, 253, 248, .82);
+      border-radius: 9px;
+      color: var(--muted);
+      background: rgba(255, 253, 248, .88);
+      box-shadow: 0 4px 15px rgba(58, 39, 28, .08);
+      font-size: 10px;
+      backdrop-filter: blur(12px);
+    }
+
+    .map-filters {
+      position: fixed;
+      z-index: 450;
+      bottom: 22px;
+      left: 22px;
+      display: flex;
+      gap: 3px;
+      padding: 4px;
+      border: 1px solid rgba(255, 253, 248, .9);
+      border-radius: 12px;
+      background: rgba(255, 253, 248, .94);
+      box-shadow: 0 6px 20px rgba(58, 39, 28, .12);
+      backdrop-filter: blur(14px);
+    }
+    .filter {
+      min-height: 34px;
+      padding: 0 13px;
+      border: 0;
+      border-radius: 9px;
+      color: #81756a;
+      background: transparent;
+      font-size: 11px;
+    }
+    .filter.active { color: #fffaf2; background: var(--roast); }
+
+    .map-buttons {
+      position: fixed;
+      z-index: 450;
+      right: 22px;
+      bottom: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .map-button {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 253, 248, .9);
+      border-radius: 11px;
+      color: var(--roast);
+      background: rgba(255, 253, 248, .94);
+      box-shadow: 0 5px 16px rgba(58, 39, 28, .12);
+      backdrop-filter: blur(12px);
+    }
+    .map-button svg { width: 17px; height: 17px; }
+
+    .cafe-card {
+      position: fixed;
+      z-index: 460;
+      right: 22px;
+      bottom: 22px;
+      width: 290px;
+      display: none;
+      padding: 17px;
+      border: 1px solid rgba(255, 253, 248, .9);
+      border-radius: 15px;
+      background: rgba(255, 253, 248, .96);
+      box-shadow: 0 12px 36px rgba(58, 39, 28, .16);
+      backdrop-filter: blur(16px);
+    }
+    .cafe-card.open { display: block; }
+    .cafe-card-head { display: flex; align-items: flex-start; gap: 12px; }
+    .cafe-title {
+      min-width: 0;
+      flex: 1;
+      margin: 0;
+      color: var(--espresso);
+      font: 20px/1.15 Georgia, "Times New Roman", serif;
+    }
+    .cafe-address { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .close-card {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 26px;
+      border: 0;
+      border-radius: 50%;
+      color: var(--muted);
+      background: #f0ebe2;
+      font-size: 15px;
+    }
+    .visit-toggle {
+      width: 100%;
+      min-height: 39px;
+      margin-top: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid #d9cabb;
+      border-radius: 10px;
+      color: var(--roast);
+      background: #f6f1e8;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .visit-toggle.visited { border-color: #746d55; color: #fffaf2; background: #746d55; }
+    .visit-toggle svg { width: 14px; height: 14px; }
+
+    .pin {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 253, 248, .95);
+      border-radius: 50%;
+      color: #fffaf2;
+      background: #88664e;
+      box-shadow: 0 3px 10px rgba(53, 36, 26, .3);
+    }
+    .pin.visited { color: #fffaf2; background: #4c382d; }
+    .pin svg { width: 13px; height: 18px; }
+    .cluster {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 253, 248, .95);
+      border-radius: 50%;
+      color: #fffaf2;
+      background: rgba(93, 61, 46, .94);
+      box-shadow: 0 4px 13px rgba(53, 36, 26, .25);
+      font: 14px Georgia, "Times New Roman", serif;
+    }
+
+    .notice {
+      position: fixed;
+      z-index: 800;
+      top: 98px;
+      left: 22px;
+      max-width: 340px;
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 253, 248, .9);
+      border-radius: 10px;
+      color: var(--roast);
+      background: rgba(255, 253, 248, .96);
+      box-shadow: 0 6px 20px rgba(58, 39, 28, .12);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .notice.visible { display: block; }
+
+    @media (max-width: 700px) {
+      .topbar {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        height: 96px;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 40px 40px;
+        gap: 6px;
+        padding: 7px 9px;
+        border-radius: 14px;
+      }
+      .brand { height: 40px; flex-basis: 42px; justify-content: flex-start; }
+      .brand-logo { width: 34px; height: 39px; }
+      .search-wrap { grid-row: 2; width: 100%; height: 40px; }
+      .search-icon { top: 11px; }
+      .map-status { top: 112px; left: 12px; }
+      .notice { top: 112px; left: 12px; right: 12px; max-width: none; }
+      .map-filters {
+        left: 12px;
+        right: 12px;
+        bottom: calc(12px + env(safe-area-inset-bottom));
+      }
+      .filter { flex: 1; }
+      .map-buttons { right: 12px; bottom: 68px; }
+      .cafe-card {
+        left: 10px;
+        right: 10px;
+        bottom: calc(68px + env(safe-area-inset-bottom));
+        width: auto;
+        padding: 14px;
+      }
+      .leaflet-control-attribution {
+        margin-bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+        font-size: 8px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="map" aria-label="Мапа кав’ярень Києва"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="de caf">
+      <img class="brand-logo" src="./de-caf-logo.png" alt="de caf">
+    </a>
+
+    <label class="search-wrap" aria-label="Пошук кав’ярні">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+        <circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 4.3 4.3"/>
+      </svg>
+      <input id="search" type="search" placeholder="Кав'ярня" autocomplete="off">
+      <button class="clear-search" id="clearSearch" type="button" aria-label="Очистити пошук">×</button>
+    </label>
+  </header>
+
+  <div class="map-status" id="mapStatus">Завантаження…</div>
+  <div class="notice" id="notice"></div>
+
+  <nav class="map-filters" aria-label="Фільтр кав’ярень">
+    <button class="filter active" data-filter="all">Усі</button>
+    <button class="filter" data-filter="visited">Відвідані</button>
+  </nav>
+
+  <div class="map-buttons">
+    <button class="map-button" id="zoomIn" aria-label="Збільшити мапу">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.8" cy="10.8" r="6.5"/><path d="M10.8 7.5v6.6M7.5 10.8h6.6M16 16l4 4"/></svg>
+    </button>
+    <button class="map-button" id="showKyiv" aria-label="Показати весь Київ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="7.2"/><circle cx="12" cy="12" r="2.4"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22"/></svg>
+    </button>
+  </div>
+
+  <section class="cafe-card" id="cafeCard" aria-live="polite">
+    <div class="cafe-card-head">
+      <div><h1 class="cafe-title" id="cafeName"></h1><p class="cafe-address" id="cafeAddress"></p></div>
+      <button class="close-card" id="closeCard" aria-label="Закрити">×</button>
+    </div>
+    <button class="visit-toggle" id="visitToggle"></button>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    (() => {
+      const CAFE_CACHE = "decaf-osm-cafes-v2";
+      const VISITED_KEY = "decaf-visited-v1";
+      const KYIV_AREA = 3600421866;
+      const KYIV_CENTER = [50.4501, 30.5234];
+      const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
+
+      const byId = (id) => document.getElementById(id);
+      let cafes = readCafeCache();
+      let visited = readVisited();
+      let map;
+      let cafePins;
+      let selectedCafe = null;
+      let activeFilter = "all";
+
+      function readCafeCache() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(CAFE_CACHE));
+          return Array.isArray(stored && stored.places) ? stored.places : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function readVisited() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(VISITED_KEY));
+          return new Set(Array.isArray(stored) ? stored : []);
+        } catch {
+          return new Set();
+        }
+      }
+
+      function saveVisited() {
+        localStorage.setItem(VISITED_KEY, JSON.stringify(Array.from(visited)));
+      }
+
+      function placesToShow() {
+        const search = byId("search").value.trim().toLocaleLowerCase("uk");
+        return cafes.filter((cafe) => {
+          const matchesVisit = activeFilter !== "visited" || visited.has(cafe.id);
+          const matchesSearch = !search || (cafe.name + " " + cafe.address).toLocaleLowerCase("uk").includes(search);
+          return matchesVisit && matchesSearch;
+        });
+      }
+
+      function showNotice(message) {
+        byId("notice").textContent = message;
+        byId("notice").classList.add("visible");
+      }
+
+      function updateCount() {
+        const count = placesToShow().length;
+        byId("mapStatus").textContent = cafes.length
+          ? count.toLocaleString("uk-UA") + " місць"
+          : "Завантаження…";
+      }
+
+      function cafeAddress(tags) {
+        const street = tags["addr:street"] || tags["addr:place"] || tags["addr:suburb"] || tags["addr:district"];
+        const number = tags["addr:housenumber"];
+        return street ? street + (number ? ", " + number : "") : (tags["addr:full"] || "Київ");
+      }
+
+      function parseCafeData(elements) {
+        const unique = new Map();
+        elements.forEach((place) => {
+          const lat = place.lat != null ? place.lat : place.center && place.center.lat;
+          const lon = place.lon != null ? place.lon : place.center && place.center.lon;
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+
+          const tags = place.tags || {};
+          const name = (tags.name || tags["name:uk"] || tags.brand || "Кав’ярня").trim();
+          const key = name.toLocaleLowerCase("uk") + "|" + lat.toFixed(4) + "|" + lon.toFixed(4);
+          if (unique.has(key)) return;
+
+          unique.set(key, {
+            id: place.type + "/" + place.id,
+            type: place.type,
+            osmId: place.id,
+            name,
+            address: cafeAddress(tags),
+            lat,
+            lon
+          });
+        });
+
+        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, "uk"));
+      }
+
+      function pinIcon(cafe) {
+        const state = visited.has(cafe.id) ? "pin visited" : "pin";
+        const svg = '<svg viewBox="0 0 20 30" fill="none" aria-hidden="true"><path d="M15.8 2.7C11.3.5 5 3.8 2.8 10.4.8 16.7 3.5 23.8 8.4 26c4.7 2 9.7-2.4 10.4-8.8.6-5.6-1-12.5-3-14.5Z" stroke="currentColor" stroke-width="1.4"/><path d="M5 23.5c4.8-5.5 6.7-11.5 10-18" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
+        return L.divIcon({ className: "", html: '<span class="' + state + '">' + svg + "</span>", iconSize: [30, 30], iconAnchor: [15, 15] });
+      }
+
+      function clusterIcon(count) {
+        return L.divIcon({
+          className: "",
+          html: '<span class="cluster">' + count + "</span>",
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
+        });
+      }
+
+      function drawPins() {
+        if (!map || !cafePins) return;
+        cafePins.clearLayers();
+
+        const places = placesToShow();
+        const zoom = map.getZoom();
+
+        if (zoom < 14) {
+          const groups = new Map();
+          places.forEach((cafe) => {
+            const point = map.project([cafe.lat, cafe.lon], zoom);
+            const key = Math.floor(point.x / 38) + ":" + Math.floor(point.y / 38);
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(cafe);
+          });
+
+          groups.forEach((group) => {
+            const center = [
+              group.reduce((sum, cafe) => sum + cafe.lat, 0) / group.length,
+              group.reduce((sum, cafe) => sum + cafe.lon, 0) / group.length
+            ];
+
+            if (group.length > 1) {
+              const marker = L.marker(center, { icon: clusterIcon(group.length) });
+              marker.on("click", () => map.flyTo(center, Math.min(17, zoom + 2), { duration: .4 }));
+              marker.addTo(cafePins);
+            } else {
+              addPin(group[0]);
+            }
+          });
+        } else {
+          places.forEach(addPin);
+        }
+
+        updateCount();
+      }
+
+      function addPin(cafe) {
+        const marker = L.marker([cafe.lat, cafe.lon], {
+          icon: pinIcon(cafe),
+          title: cafe.name,
+          alt: cafe.name
+        });
+        marker.on("click", () => selectCafe(cafe));
+        marker.addTo(cafePins);
+      }
+
+      function selectCafe(cafe) {
+        selectedCafe = cafe;
+        byId("cafeName").textContent = cafe.name;
+        byId("cafeAddress").textContent = cafe.address;
+        updateVisitButton();
+        byId("cafeCard").classList.add("open");
+        drawPins();
+      }
+
+      function updateVisitButton() {
+        const button = byId("visitToggle");
+        const isVisited = selectedCafe && visited.has(selectedCafe.id);
+        button.classList.toggle("visited", Boolean(isVisited));
+        button.innerHTML = isVisited
+          ? '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 10 4 4 8-8"/></svg>Відвідано'
+          : "Позначити як відвідану";
+      }
+
+      function closeCafeCard() {
+        selectedCafe = null;
+        byId("cafeCard").classList.remove("open");
+        drawPins();
+      }
+
+      async function loadCafes() {
+        if (cafes.length) {
+          drawPins();
+        }
+
+        const query = '[out:json][timeout:25];area(' + KYIV_AREA + ')->.kyiv;(nwr["amenity"="cafe"](area.kyiv);nwr["shop"="coffee"](area.kyiv););out center tags;';
+
+        try {
+          const response = await fetch(OVERPASS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+            body: new URLSearchParams({ data: query })
+          });
+          if (!response.ok) throw new Error("OpenStreetMap " + response.status);
+
+          const data = await response.json();
+          if (!Array.isArray(data.elements)) throw new Error("No cafe data");
+
+          const latest = parseCafeData(data.elements);
+          if (!latest.length) throw new Error("No places returned");
+          cafes = latest;
+          localStorage.setItem(CAFE_CACHE, JSON.stringify({ places: cafes }));
+          byId("notice").classList.remove("visible");
+          drawPins();
+        } catch (error) {
+          if (cafes.length) {
+            byId("mapStatus").textContent = cafes.length.toLocaleString("uk-UA") + " місць · збережено";
+          } else {
+            byId("mapStatus").textContent = "Місця не завантажились";
+            showNotice("Не вдалося завантажити кав’ярні. Спробуй оновити сторінку.");
+          }
+        }
+      }
+
+      document.querySelectorAll("[data-filter]").forEach((button) => {
+        button.addEventListener("click", () => {
+          activeFilter = button.dataset.filter;
+          document.querySelectorAll("[data-filter]").forEach((item) => item.classList.toggle("active", item === button));
+          drawPins();
+        });
+      });
+
+      byId("search").addEventListener("input", () => {
+        const hasSearch = Boolean(byId("search").value.trim());
+        byId("clearSearch").classList.toggle("visible", hasSearch);
+        drawPins();
+      });
+      byId("search").addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        const matches = placesToShow();
+        if (matches.length !== 1) return;
+        selectCafe(matches[0]);
+        map.flyTo([matches[0].lat, matches[0].lon], 16, { duration: .4 });
+      });
+
+      byId("clearSearch").addEventListener("click", () => {
+        byId("search").value = "";
+        byId("clearSearch").classList.remove("visible");
+        drawPins();
+        byId("search").focus();
+      });
+      byId("closeCard").addEventListener("click", closeCafeCard);
+      byId("visitToggle").addEventListener("click", () => {
+        if (!selectedCafe) return;
+        if (visited.has(selectedCafe.id)) visited.delete(selectedCafe.id);
+        else visited.add(selectedCafe.id);
+        saveVisited();
+        updateVisitButton();
+        drawPins();
+      });
+
+      if (!window.L) {
+        byId("mapStatus").textContent = "Мапа не завантажилась";
+        showNotice("Не вдалося завантажити мапу");
+        return;
+      }
+
+      map = L.map("map", { zoomControl: false, preferCanvas: true }).setView(KYIV_CENTER, 12);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        subdomains: "abc",
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      cafePins = L.layerGroup().addTo(map);
+      map.on("moveend zoomend", drawPins);
+      byId("zoomIn").addEventListener("click", () => map.zoomIn());
+      byId("showKyiv").addEventListener("click", () => map.flyTo(KYIV_CENTER, 12, { duration: .5 }));
+
+      if (location.protocol === "file:") {
+        showNotice("Не вдалося завантажити мапу");
+      }
+      loadCafes();
+    })();
+  </script>
+</body>
+</html>
+
