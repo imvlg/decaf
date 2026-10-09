@@ -467,8 +467,7 @@
       display: grid;
       place-items: center;
       color: var(--roast-color, #987858);
-      filter: drop-shadow(0 3px 4px rgba(43, 29, 22, .3));
-      transition: transform .3s var(--spring), color .2s;
+      transition: transform .18s var(--spring), color .2s;
     }
     .pin svg { width: 26px; height: 26px; transform: rotate(-24deg); }
     .pin svg path:first-child { stroke: rgba(55, 33, 22, .82); stroke-width: .7; paint-order: stroke fill; stroke-linejoin: round; }
@@ -483,7 +482,7 @@
       color: var(--ink);
       transition: transform .3s var(--spring);
     }
-    .cluster svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-24deg); filter: drop-shadow(0 3px 4px rgba(43, 29, 22, .3)); }
+    .cluster svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-24deg); }
     .cluster-fill { fill: var(--roast-color, #3d291f); stroke: rgba(251, 248, 242, .8); stroke-width: .55; }
     .cluster-crease { fill: none; stroke: rgba(251, 248, 242, .84); stroke-width: 1.15; stroke-linecap: round; }
     .cluster-number {
@@ -960,11 +959,11 @@
         const ne = outer.getNorthEast();
         const frame = [[sw.lat, sw.lng], [ne.lat, sw.lng], [ne.lat, ne.lng], [sw.lat, ne.lng]];
         L.polygon([frame, ...cityBoundary.map((r) => r.points)], {
-          pane: "maskPane", stroke: false, fillColor: "#2b1d16", fillOpacity: .22, fillRule: "evenodd", interactive: false
+          pane: "maskPane", stroke: false, fillColor: "#2b1d16", fillOpacity: .22, fillRule: "evenodd", smoothFactor: 3, interactive: false
         }).addTo(maskLayer);
         cityBoundary.forEach((ring) => {
-          L.polyline(ring.points, { pane: "borderPane", color: "#fbf8f2", weight: 6, opacity: .7, interactive: false }).addTo(boundaryLayer);
-          L.polyline(ring.points, { pane: "borderPane", color: "#5d3d2e", weight: 1.6, opacity: .85, interactive: false }).addTo(boundaryLayer);
+          L.polyline(ring.points, { pane: "borderPane", color: "#fbf8f2", weight: 6, opacity: .7, smoothFactor: 3, interactive: false }).addTo(boundaryLayer);
+          L.polyline(ring.points, { pane: "borderPane", color: "#5d3d2e", weight: 1.6, opacity: .85, smoothFactor: 3, interactive: false }).addTo(boundaryLayer);
         });
         map.setMaxBounds(L.latLngBounds(points).pad(.5));
       }
@@ -1015,7 +1014,7 @@
       function drawPins() {
         if (!cafePins || !cafeIndex || !map) return;
         const zoom = Math.max(0, Math.floor(map.getZoom()));
-        const bounds = map.getBounds().pad(.45);
+        const bounds = map.getBounds().pad(.2);
         const features = cafeIndex.getClusters([
           bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()
         ], zoom);
@@ -1040,7 +1039,8 @@
               });
               clusterMarkers.set(key, marker);
             } else {
-              marker.setLatLng([lat, lon]);
+              const current = marker.getLatLng();
+              if (current.lat !== lat || current.lng !== lon) marker.setLatLng([lat, lon]);
               if (marker.deCafeStyle !== styleKey) {
                 marker.setIcon(clusterIcon(properties.point_count, rating));
                 marker.deCafeStyle = styleKey;
@@ -1064,7 +1064,8 @@
             });
             cafeMarkers.set(cafe.id, marker);
           } else {
-            marker.setLatLng([lat, lon]);
+            const current = marker.getLatLng();
+            if (current.lat !== lat || current.lng !== lon) marker.setLatLng([lat, lon]);
             updateCafeMarker(cafe);
           }
           nextPins.set(key, marker);
@@ -1104,7 +1105,7 @@
             };
           });
           cafeIndex = new window.Supercluster({
-            radius: 58,
+            radius: 84,
             maxZoom: 18,
             minPoints: 2,
             map: (properties) => ({
@@ -1632,8 +1633,8 @@
         zoomSnap: .5,
         zoomDelta: .5,
         zoomAnimation: true,
-        markerZoomAnimation: true,
-        fadeAnimation: true,
+        markerZoomAnimation: false,
+        fadeAnimation: false,
         wheelPxPerZoomLevel: 240,
         maxBounds: L.latLngBounds([[50.05, 29.9], [50.85, 31.05]]),
         maxBoundsViscosity: .9
@@ -1645,7 +1646,7 @@
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         updateWhenZooming: false,
-        keepBuffer: 2,
+        keepBuffer: 1,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
       }).addTo(map);
 
