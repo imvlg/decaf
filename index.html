@@ -69,6 +69,7 @@
       place-items: center;
       border-radius: 18px;
     }
+    .brand { animation: logo-arrive .55s ease-out both; }
     .brand img { width: 40px; height: 46px; object-fit: contain; }
 
     .dock {
@@ -214,6 +215,7 @@
       transform: none;
       transition: opacity .25s var(--ease), transform .5s var(--spring), visibility 0s;
     }
+    .sheet-handle { display: none; }
 
     .sheet-head { display: flex; align-items: flex-start; gap: 8px; }
     .sheet-title { min-width: 0; flex: 1; padding-top: 4px; }
@@ -354,9 +356,6 @@
       transition: color .15s var(--ease), transform .2s var(--spring);
     }
     .bean-score svg { width: 28px; height: 28px; }
-    .bean-score.on { color: var(--roast); }
-    .bean-score.preview-on { color: var(--clay); }
-    .bean-score.preview-off { color: var(--faint); }
     .bean-score:active { transform: scale(.85); }
 
     .drink-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -377,7 +376,7 @@
     .drink img { width: 52px; height: 46px; object-fit: contain; transition: transform .35s var(--spring); }
     .drink span { color: var(--clay); font-size: 11px; font-weight: 500; }
     .drink:has(input:checked) { border-color: var(--roast); background: rgba(93, 61, 46, .1); }
-    .drink:has(input:checked) img { transform: scale(1.08) rotate(-4deg); }
+    .drink:has(input:checked) img { animation: drink-tilt .55s ease-out; }
     .drink:has(input:checked) span { color: var(--ink); }
     .drink:has(input:focus-visible) { outline: 2px solid var(--clay); outline-offset: 2px; }
 
@@ -467,14 +466,13 @@
       height: 32px;
       display: grid;
       place-items: center;
-      color: #815e48;
+      color: var(--roast-color, #bdbaa9);
       filter: drop-shadow(0 3px 4px rgba(43, 29, 22, .3));
       transition: transform .3s var(--spring), color .2s;
     }
     .pin svg { width: 26px; height: 26px; transform: rotate(-24deg); }
     .pin:hover { transform: scale(1.18); }
-    .pin.visited { color: #5d3d2e; }
-    .pin.selected { color: var(--ink); transform: scale(1.4); }
+    .pin.selected { transform: scale(1.4); }
     .cluster {
       position: relative;
       width: 100%;
@@ -483,14 +481,18 @@
       place-items: center;
       border: 2px solid rgba(251, 248, 242, .95);
       border-radius: 50%;
-      color: var(--ink);
-      background: #afa089;
+      color: var(--cluster-text, var(--ink));
+      background: var(--roast-color, #bdbaa9);
       box-shadow: 0 0 0 5px rgba(93, 61, 46, .16), 0 4px 10px rgba(43, 29, 22, .25);
       font: 700 12px/1 "Manrope", system-ui, sans-serif;
       transition: transform .3s var(--spring);
     }
-    .cluster.has-visited { color: var(--cream); background: #5d3d2e; }
     .cluster:hover { transform: scale(1.1); }
+    @keyframes logo-arrive { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes drink-tilt {
+      0%, 100% { transform: none; }
+      38% { transform: rotate(-4deg) scale(1.08); }
+    }
     @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
     @keyframes drop { from { opacity: 0; transform: translateY(-12px); } }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -519,18 +521,27 @@
         border-radius: 26px;
         transform: translateY(32px);
         transform-origin: bottom center;
+        transition: opacity .22s var(--ease), transform .3s var(--ease), max-height .3s var(--ease), visibility 0s .3s;
       }
-      .sheet::before {
-        content: "";
-        position: absolute;
-        top: 9px;
-        left: 50%;
-        width: 36px;
-        height: 4px;
-        border-radius: 4px;
-        background: var(--faint);
-        transform: translateX(-50%);
+      .sheet.open {
+        transition: opacity .25s var(--ease), transform .5s var(--spring), max-height .3s var(--ease), visibility 0s;
       }
+      .sheet-handle {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: block;
+        width: 64px;
+        height: 24px;
+        margin: -26px auto 0;
+        border: 0;
+        border-radius: 12px;
+        background: rgba(251, 248, 242, .95);
+        touch-action: none;
+        cursor: grab;
+      }
+      .sheet-handle::before { content: ""; display: block; width: 36px; height: 4px; margin: auto; border-radius: 4px; background: var(--faint); }
+      .sheet.compact { max-height: 50dvh; }
       .sheet-title h1, .sheet-title h2 { font-size: 20px; }
       .status { bottom: calc(18px + env(safe-area-inset-bottom)); }
     }
@@ -569,6 +580,7 @@
   </div>
 
   <aside class="sheet glass" id="reviewsDrawer" aria-labelledby="drawerTitle">
+    <div class="sheet-handle" aria-hidden="true"></div>
     <div class="sheet-head">
       <div class="sheet-title"><h2 id="drawerTitle">Відгуки <span class="count" id="reviewsCount"></span></h2></div>
       <button class="icon-btn" id="closeReviews" type="button" aria-label="Закрити">
@@ -579,6 +591,7 @@
   </aside>
 
   <aside class="sheet glass" id="cafeCard" aria-labelledby="cafeName">
+    <div class="sheet-handle" aria-hidden="true"></div>
     <div class="sheet-head">
       <div class="sheet-title"><h1 id="cafeName"></h1><p id="cafeAddress" hidden></p></div>
       <button class="icon-btn" id="closeCard" type="button" aria-label="Закрити">
@@ -596,7 +609,7 @@
     <div class="collapse" id="formWrap">
       <div class="collapse-inner">
         <form class="review-form" id="reviewForm" novalidate>
-          <div class="bean-rating" id="beanRating" role="radiogroup" aria-label="Оцінка"></div>
+          <div class="bean-rating" id="beanRating" role="group" aria-label="Оцінка від половини до п’яти зернят"></div>
           <div class="drink-picker" id="drinkPicker" role="group" aria-label="Напої"></div>
           <div class="extras">
             <label class="toggle-chip"><input id="reviewDecaf" type="checkbox">декаф</label>
@@ -617,7 +630,7 @@
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     (() => {
-      const CAFE_CACHE = "decaf-cafes-v5";
+      const CAFE_CACHE = "decaf-cafes-v6";
       const BOUNDARY_CACHE = "decaf-boundary-v1";
       const VISITED_KEY = "decaf-visited-v1";
       const REVIEWS_KEY = "decaf-reviews-v1";
@@ -626,6 +639,7 @@
       const KYIV_CENTER = [50.4501, 30.5234];
       const CAFE_TTL = 12 * 60 * 60 * 1000;
       const BOUNDARY_TTL = 30 * 24 * 60 * 60 * 1000;
+      const OVERPASS_TIMEOUT = window.innerWidth <= 700 ? 25000 : 45000;
       const OVERPASS_URLS = [
         "https://overpass-api.de/api/interpreter",
         "https://overpass.private.coffee/api/interpreter",
@@ -642,6 +656,19 @@
       const BEAN_PATH = "M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z";
       const bean = (fill = "currentColor") =>
         '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + BEAN_PATH + '" fill="' + fill + '"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#fbf8f2" stroke-width="1.3" stroke-linecap="round"/></svg>';
+      let beanClipId = 0;
+      function ratedBean(rating, index, roasted = "#5d3d2e", unroasted = "#ddd2c4") {
+        const fill = Math.max(0, Math.min(1, (Number(rating) || 0) - index));
+        if (fill === 0) return bean(unroasted);
+        if (fill === 1) return bean(roasted);
+        const clipId = "bean-fill-" + (++beanClipId);
+        return `<svg viewBox="0 0 24 24" aria-hidden="true">
+          <defs><clipPath id="${clipId}"><rect width="${24 * fill}" height="24"/></clipPath></defs>
+          <path d="${BEAN_PATH}" fill="${unroasted}"/>
+          <path d="${BEAN_PATH}" fill="${roasted}" clip-path="url(#${clipId})"/>
+          <path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#fbf8f2" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>`;
+      }
       const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
       const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -657,40 +684,79 @@
         }
       };
 
-      const cafeCache = store.get(CAFE_CACHE, {});
+      const currentCafeCache = store.get(CAFE_CACHE, null);
+      const cafeCache = currentCafeCache || store.get("decaf-cafes-v5", {});
       const boundaryCache = store.get(BOUNDARY_CACHE, {});
       let cafes = Array.isArray(cafeCache.places) ? cafeCache.places : [];
-      let cafesFetchedAt = Number(cafeCache.fetchedAt) || 0;
+      let cafesFetchedAt = currentCafeCache ? Number(cafeCache.fetchedAt) || 0 : 0;
       let cityBoundary = Array.isArray(boundaryCache.rings) ? boundaryCache.rings : [];
       let boundaryFetchedAt = Number(boundaryCache.fetchedAt) || 0;
       let visited = new Set([].concat(store.get(VISITED_KEY, [])));
       let reviews = [].concat(store.get(REVIEWS_KEY, []));
+      const cafeRatings = new Map();
+
+      function updateCafeRatings() {
+        cafeRatings.clear();
+        const totals = new Map();
+        reviews.forEach((review) => {
+          const score = Number(review.rating);
+          if (!review.cafeId || !Number.isFinite(score) || score <= 0) return;
+          const value = totals.get(review.cafeId) || { total: 0, count: 0 };
+          value.total += score;
+          value.count += 1;
+          totals.set(review.cafeId, value);
+        });
+        totals.forEach((value, cafeId) => cafeRatings.set(cafeId, value.total / value.count));
+      }
+      updateCafeRatings();
+
+      const ROAST_STOPS = [
+        { hex: "#bdbaa9", rgb: [189, 186, 169] },
+        { hex: "#afa089", rgb: [175, 160, 137] },
+        { hex: "#815e48", rgb: [129, 94, 72] },
+        { hex: "#7b5f51", rgb: [123, 95, 81] },
+        { hex: "#6b4b3e", rgb: [107, 75, 62] },
+        { hex: "#5d3d2e", rgb: [93, 61, 46] }
+      ];
+
+      function roastColor(rating) {
+        const score = Math.max(0, Math.min(5, Number(rating) || 0));
+        const lower = Math.floor(score);
+        const upper = Math.min(5, lower + 1);
+        if (lower === upper || score === lower) return ROAST_STOPS[lower].hex;
+        const amount = score - lower;
+        const from = ROAST_STOPS[lower].rgb;
+        const to = ROAST_STOPS[upper].rgb;
+        return "rgb(" + from.map((value, i) => Math.round(value + (to[i] - value) * amount)).join(",") + ")";
+      }
 
       let map, cafePins, maskLayer, boundaryLayer;
       let selectedCafe = null;
       let onlyVisited = false;
       let drawFrame = 0;
+      let ratingPreview = null;
 
-      const LIFECYCLE = ["disused", "abandoned", "vacant", "demolished", "removed", "razed", "destroyed"];
-      const NOT_COFFEE_CUISINE = /ice_cream|frozen_yogurt|bubble_tea|\btea\b|hookah|shisha|pizza|burger|sushi|kebab|shawarma|chicken|hot_dog|fast_food|bbq|noodle|ramen/;
-      const NOT_COFFEE_NAME = /кальян|hookah|shisha|морозив|ice ?cream|gelato|bubble|шаурм|shawarm|піц|pizz|суші|sushi|бургер|burger|чайхан|tea ?house|їдальн|столова|хінкал|вареничн|пельмен/i;
-      const COFFEE_HINT = /coffee|кав|кофе|espresso|еспресо|бариста|barista|roast/i;
-
+      const LIFECYCLE = ["disused", "abandoned", "vacant", "demolished", "removed", "razed", "destroyed", "closed"];
+      const NOT_COFFEE_CUISINE = /ice_cream|frozen_yogurt|bubble_tea|\btea\b|hookah|shisha|pizza|burger|sushi|kebab|shawarma|chicken|hot_dog|fast_food|bbq|noodle|ramen|restaurant|bistro|steak_house|seafood/;
+      const NOT_COFFEE_NAME = /кальян|hookah|shisha|морозив|ice ?cream|gelato|bubble|шаурм|shawarm|піц|pizz|суші|sushi|бургер|burger|чайхан|tea ?house|їдальн|столова|хінкал|вареничн|пельмен|ресторан|restaurant|бістро|bistro|стейк|steak/i;
+      cafes = cafes.filter((cafe) => !NOT_COFFEE_NAME.test(cafe.name || "") && !/закрит|зачинен|не працює|closed/i.test(cafe.name || ""));
       function isOperating(tags) {
         for (const key in tags) {
           if (LIFECYCLE.includes(key.split(":")[0])) return false;
         }
+        const closed = [tags.closed, tags.disused, tags.abandoned, tags.vacant, tags.permanently_closed, tags.status, tags["operational_status"]]
+          .some((value) => /^(yes|true|1|closed|permanently closed|disused|abandoned|vacant)$/i.test(String(value || "").trim()));
+        if (closed) return false;
         if (
           tags.end_date ||
           tags["cafe:state"] === "closed" ||
           tags.lifecycle === "closed" ||
-          tags.closed === "yes" ||
-          tags.permanently_closed === "yes" ||
           tags.access === "private" ||
           tags.access === "no"
         ) return false;
         if (/^\s*(closed|off)\s*$/i.test(tags.opening_hours || "")) return false;
-        if (/закрит|зачинен|\bclosed\b/i.test(tags.name || "")) return false;
+        const notes = [tags.name, tags["name:uk"], tags["name:en"], tags.description, tags.note].filter(Boolean).join(" ");
+        if (/закрит|зачинен|не працює|closed|permanently closed/i.test(notes)) return false;
         return true;
       }
 
@@ -698,10 +764,7 @@
         if (tags["drink:coffee"] === "no") return false;
         if (tags.shisha === "yes" || tags.hookah === "yes" || tags.cafe === "hookah" || tags.cafe === "shisha") return false;
         const cuisine = (tags.cuisine || "").toLowerCase();
-        const coffeeish = /coffee/.test(cuisine) || tags["drink:coffee"] === "yes" || COFFEE_HINT.test(name);
-        if (coffeeish) return true;
-        if (NOT_COFFEE_CUISINE.test(cuisine)) return false;
-        if (NOT_COFFEE_NAME.test(name)) return false;
+        if (NOT_COFFEE_CUISINE.test(cuisine) || NOT_COFFEE_NAME.test(name)) return false;
         return true;
       }
 
@@ -779,7 +842,7 @@
         let lastError = new Error("Overpass unavailable");
         for (const url of OVERPASS_URLS) {
           const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 45000);
+          const timer = setTimeout(() => controller.abort(), OVERPASS_TIMEOUT);
           try {
             const response = await fetch(url, {
               method: "POST",
@@ -869,21 +932,22 @@
 
       function pinIcon(cafe) {
         const classes = ["pin"];
-        if (visited.has(cafe.id)) classes.push("visited");
         if (selectedCafe && selectedCafe.id === cafe.id) classes.push("selected");
+        const rating = cafeRatings.get(cafe.id) || 0;
         return L.divIcon({
           className: "marker-wrap",
-          html: '<span class="' + classes.join(" ") + '">' + bean() + "</span>",
+          html: '<span class="' + classes.join(" ") + '" style="--roast-color:' + roastColor(rating) + '">' + bean() + "</span>",
           iconSize: [32, 32],
           iconAnchor: [16, 16]
         });
       }
 
-      function clusterIcon(count, hasVisited) {
+      function clusterIcon(count, rating) {
         const size = count < 10 ? 34 : count < 50 ? 40 : count < 200 ? 46 : 52;
+        const textColor = rating >= 2 ? "var(--cream)" : "var(--ink)";
         return L.divIcon({
           className: "marker-wrap",
-          html: '<span class="cluster' + (hasVisited ? " has-visited" : "") + '">' + count + "</span>",
+          html: '<span class="cluster" style="--roast-color:' + roastColor(rating) + ';--cluster-text:' + textColor + '">' + count + "</span>",
           iconSize: [size, size],
           iconAnchor: [size / 2, size / 2]
         });
@@ -928,8 +992,9 @@
               group.reduce((s, c) => s + c.lat, 0) / group.length,
               group.reduce((s, c) => s + c.lon, 0) / group.length
             ];
-            const hasVisited = group.some((cafe) => visited.has(cafe.id));
-            const marker = L.marker(center, { icon: clusterIcon(group.length, hasVisited) });
+            const scores = group.map((cafe) => cafeRatings.get(cafe.id) || 0).filter(Boolean);
+            const rating = scores.length ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
+            const marker = L.marker(center, { icon: clusterIcon(group.length, rating) });
             marker.on("click", () => {
               const groupBounds = L.latLngBounds(group.map((c) => [c.lat, c.lon]));
               if (groupBounds.getNorthEast().distanceTo(groupBounds.getSouthWest()) < 5) {
@@ -959,9 +1024,14 @@
       function beansRow(value) {
         const row = document.createElement("div");
         row.className = "beans";
-        row.setAttribute("aria-label", value + " з 5");
-        row.innerHTML = Array.from({ length: 5 }, (_, i) => bean(i < Number(value) ? "#5d3d2e" : "#ddd2c4")).join("");
+        row.setAttribute("aria-label", ratingLabel(value));
+        row.innerHTML = Array.from({ length: 5 }, (_, i) => ratedBean(value, i)).join("");
         return row;
+      }
+
+      function ratingLabel(value) {
+        const score = Number(value) || 0;
+        return score.toLocaleString("uk-UA", { maximumFractionDigits: 1 }) + " з 5";
       }
 
       function reviewNode(review, index, withCafe) {
@@ -1068,6 +1138,8 @@
           reviews = previous;
           return;
         }
+        updateCafeRatings();
+        redraw();
         if (selectedCafe) renderCafeReviews();
         renderAllReviews();
         updateBadge();
@@ -1082,16 +1154,40 @@
         $("reviewsDrawer").classList.toggle("open", open);
         $("reviewsToggle").setAttribute("aria-expanded", String(open));
         if (open) {
+          $("reviewsDrawer").classList.remove("compact");
           closeCard();
           renderAllReviews();
           $("reviewsDrawer").scrollTop = 0;
         }
       }
 
+      function bindSheetDrag(sheet) {
+        const handle = sheet.querySelector(".sheet-handle");
+        let startY = null;
+
+        handle.addEventListener("pointerdown", (e) => {
+          if (e.pointerType === "mouse") return;
+          startY = e.clientY;
+          handle.setPointerCapture(e.pointerId);
+          e.preventDefault();
+          e.stopPropagation();
+        });
+        handle.addEventListener("pointerup", (e) => {
+          if (startY === null) return;
+          const distance = e.clientY - startY;
+          if (distance > 48) sheet.classList.add("compact");
+          if (distance < -48) sheet.classList.remove("compact");
+          startY = null;
+          e.stopPropagation();
+        });
+        handle.addEventListener("pointercancel", () => { startY = null; });
+      }
+
       function setFormOpen(open) {
         $("formWrap").classList.toggle("open", open);
         $("addReview").setAttribute("aria-expanded", String(open));
         if (open) {
+          $("cafeCard").classList.remove("compact");
           setTimeout(() => $("addReview").scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" }), 180);
         }
       }
@@ -1114,6 +1210,7 @@
         if (changed) {
           resetForm();
           setFormOpen(false);
+          $("cafeCard").classList.remove("compact");
           $("cafeCard").scrollTop = 0;
         }
         renderCafeReviews();
@@ -1145,7 +1242,7 @@
 
       function buildForm() {
         $("beanRating").innerHTML = Array.from({ length: 5 }, (_, i) =>
-          '<button class="bean-score" type="button" role="radio" aria-checked="false" data-rating="' + (i + 1) + '" aria-label="' + (i + 1) + ' з 5">' + bean() + "</button>"
+          '<button class="bean-score" type="button" data-index="' + i + '" aria-pressed="false" aria-label="' + ratingLabel(i + .5) + ' або ' + ratingLabel(i + 1) + '">' + ratedBean(0, i) + "</button>"
         ).join("");
 
         DRINKS.forEach(([name, src]) => {
@@ -1160,13 +1257,14 @@
       }
 
       function setRating(value, animate = true) {
-        const rating = Number(value) || 0;
+        const rating = Math.max(0, Math.min(5, Math.round((Number(value) || 0) * 2) / 2));
         $("beanRating").dataset.value = rating || "";
+        ratingPreview = null;
         document.querySelectorAll(".bean-score").forEach((btn, i) => {
-          const on = i < rating;
-          btn.classList.toggle("on", on);
-          btn.setAttribute("aria-checked", String(i + 1 === rating));
-          if (animate && on && !reduceMotion && btn.animate) {
+          const selected = rating > i && rating <= i + 1;
+          btn.setAttribute("aria-pressed", String(selected));
+          btn.innerHTML = ratedBean(rating, i);
+          if (animate && rating > i && !reduceMotion && btn.animate) {
             btn.animate([{ transform: "scale(.6) rotate(-20deg)" }, { transform: "scale(1)" }], { duration: 360, delay: i * 40, easing: "cubic-bezier(.34,1.4,.64,1)", fill: "backwards" });
           }
         });
@@ -1174,15 +1272,18 @@
 
       function previewRating(value) {
         const rating = Number(value) || 0;
+        if (ratingPreview === rating) return;
+        ratingPreview = rating;
         document.querySelectorAll(".bean-score").forEach((btn, i) => {
-          btn.classList.toggle("preview-on", rating > 0 && i < rating);
-          btn.classList.toggle("preview-off", rating > 0 && i >= rating);
+          btn.innerHTML = ratedBean(rating, i, "#815e48");
         });
       }
 
       function clearRatingPreview() {
-        document.querySelectorAll(".bean-score").forEach((btn) => {
-          btn.classList.remove("preview-on", "preview-off");
+        ratingPreview = null;
+        const selected = Number($("beanRating").dataset.value) || 0;
+        document.querySelectorAll(".bean-score").forEach((btn, i) => {
+          btn.innerHTML = ratedBean(selected, i);
         });
       }
 
@@ -1218,18 +1319,34 @@
       }
 
       buildForm();
+      bindSheetDrag($("cafeCard"));
+      bindSheetDrag($("reviewsDrawer"));
       updateBadge();
 
       $("beanRating").addEventListener("click", (e) => {
         const btn = e.target.closest(".bean-score");
-        if (btn) setRating(btn.dataset.rating);
+        if (!btn) return;
+        const rect = btn.querySelector("svg").getBoundingClientRect();
+        const half = e.detail === 0 || e.clientX >= rect.left + rect.width / 2 ? 1 : .5;
+        setRating(Number(btn.dataset.index) + half);
+      });
+
+      $("beanRating").addEventListener("keydown", (e) => {
+        const btn = e.target.closest(".bean-score");
+        if (!btn || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+        const half = e.key === "ArrowLeft" ? .5 : 1;
+        setRating(Number(btn.dataset.index) + half);
+        e.preventDefault();
       });
 
       $("beanRating").addEventListener("pointermove", (e) => {
         if (e.pointerType !== "mouse") return;
         const grain = e.target.closest(".bean-score svg path");
         const btn = grain && grain.closest(".bean-score");
-        previewRating(btn ? btn.dataset.rating : 0);
+        if (!btn) return previewRating(0);
+        const rect = btn.querySelector("svg").getBoundingClientRect();
+        const half = e.clientX < rect.left + rect.width / 2 ? .5 : 1;
+        previewRating(Number(btn.dataset.index) + half);
       });
       $("beanRating").addEventListener("pointerleave", clearRatingPreview);
 
@@ -1285,8 +1402,9 @@
           if (!visited.has(selectedCafe.id)) {
             visited.add(selectedCafe.id);
             store.set(VISITED_KEY, Array.from(visited));
-            redraw();
           }
+          updateCafeRatings();
+          redraw();
           resetForm();
           setFormOpen(false);
           renderCafeReviews();
@@ -1364,8 +1482,11 @@
         zoomControl: false,
         minZoom: 9.5,
         maxZoom: 19,
-        zoomSnap: .5,
-        zoomDelta: .5,
+        zoomSnap: 1,
+        zoomDelta: 1,
+        zoomAnimation: false,
+        markerZoomAnimation: false,
+        fadeAnimation: false,
         wheelPxPerZoomLevel: 90,
         maxBounds: L.latLngBounds([[50.05, 29.9], [50.85, 31.05]]),
         maxBoundsViscosity: .9
