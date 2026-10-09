@@ -248,7 +248,7 @@
     .icon-btn:active { transform: scale(.9); }
     .icon-btn[aria-pressed="true"] { color: var(--cream); background: var(--roast); }
 
-    .review-list { display: grid; gap: 10px; margin-top: 20px; }
+    .review-list { display: grid; gap: 10px; margin-top: 10px; }
     .review {
       padding: 14px;
       border: 1px solid var(--line);
@@ -305,18 +305,18 @@
     .empty {
       display: grid;
       justify-items: center;
-      gap: 8px;
-      padding: 22px 0 6px;
+      gap: 4px;
+      padding: 8px 0 0;
       color: var(--muted);
       font-size: 13px;
       animation: rise .4s var(--ease) both;
     }
-    .empty svg { width: 28px; height: 28px; color: var(--faint); transform: rotate(-24deg); }
+    .empty svg { width: 22px; height: 22px; color: var(--faint); transform: rotate(-24deg); }
 
     .add-review {
       width: 100%;
-      height: 48px;
-      margin-top: 18px;
+      height: 44px;
+      margin-top: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -340,7 +340,7 @@
     .collapse-inner > form { opacity: 0; transform: translateY(-6px); transition: opacity .25s var(--ease), transform .35s var(--ease); }
     .collapse.open .collapse-inner > form { opacity: 1; transform: none; transition-delay: .1s; }
 
-    .review-form { display: grid; gap: var(--gap); padding: 18px 2px 2px; }
+    .review-form { display: grid; gap: 11px; padding: 12px 2px 2px; }
 
     .bean-rating { display: flex; justify-content: center; gap: 4px; }
     .bean-score {
@@ -358,13 +358,13 @@
     .bean-score svg { width: 28px; height: 28px; }
     .bean-score:active { transform: scale(.85); }
 
-    .drink-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .drink-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
     .drink {
       position: relative;
       display: grid;
       justify-items: center;
       gap: 4px;
-      padding: 10px 4px 9px;
+      padding: 7px 4px 6px;
       border: 1.5px solid transparent;
       border-radius: 16px;
       background: var(--tint);
@@ -432,8 +432,8 @@
 
     .review-form textarea {
       width: 100%;
-      min-height: 92px;
-      padding: 12px 14px;
+      min-height: 78px;
+      padding: 10px 12px;
       border: 0;
       border-radius: 16px;
       outline: none;
@@ -466,7 +466,7 @@
       height: 32px;
       display: grid;
       place-items: center;
-      color: var(--roast-color, #bdbaa9);
+      color: var(--roast-color, #e2cdb0);
       filter: drop-shadow(0 3px 4px rgba(43, 29, 22, .3));
       transition: transform .3s var(--spring), color .2s;
     }
@@ -479,15 +479,44 @@
       height: 100%;
       display: grid;
       place-items: center;
-      border: 2px solid rgba(251, 248, 242, .95);
-      border-radius: 50%;
-      color: var(--cluster-text, var(--ink));
-      background: var(--roast-color, #bdbaa9);
-      box-shadow: 0 0 0 5px rgba(93, 61, 46, .16), 0 4px 10px rgba(43, 29, 22, .25);
-      font: 700 12px/1 "Manrope", system-ui, sans-serif;
+      color: var(--ink);
       transition: transform .3s var(--spring);
     }
+    .cluster svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-24deg); filter: drop-shadow(0 3px 4px rgba(43, 29, 22, .3)); }
+    .cluster-fill { fill: var(--roast-color, #4b2e1f); stroke: rgba(251, 248, 242, .8); stroke-width: .55; }
+    .cluster-crease { fill: none; stroke: rgba(251, 248, 242, .84); stroke-width: 1.15; stroke-linecap: round; }
+    .cluster-number {
+      position: relative;
+      z-index: 1;
+      min-width: 22px;
+      height: 19px;
+      display: grid;
+      place-items: center;
+      padding: 0 5px;
+      border: 1px solid rgba(93, 61, 46, .22);
+      border-radius: 999px;
+      color: #4b2e1f;
+      background: rgba(251, 248, 242, .94);
+      box-shadow: 0 1px 4px rgba(43, 29, 22, .2);
+      font: 700 10px/1 "Manrope", system-ui, sans-serif;
+    }
     .cluster:hover { transform: scale(1.1); }
+
+    .confirm-dialog {
+      width: min(360px, calc(100vw - 32px));
+      padding: 24px;
+      border: 1px solid rgba(93, 61, 46, .16);
+      border-radius: 24px;
+      color: var(--ink);
+      background: var(--paper);
+      box-shadow: 0 24px 70px rgba(43, 29, 22, .24);
+    }
+    .confirm-dialog::backdrop { background: rgba(43, 29, 22, .38); backdrop-filter: blur(3px); }
+    .confirm-dialog h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+    .confirm-dialog p { margin: 8px 0 20px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .confirm-button { min-height: 40px; padding: 0 15px; border: 0; border-radius: 999px; color: var(--roast); background: var(--tint); font: 600 13px "Manrope", system-ui, sans-serif; }
+    .confirm-button.destructive { color: var(--cream); background: var(--roast); }
     @keyframes logo-arrive { from { opacity: 0; } to { opacity: 1; } }
     @keyframes drink-tilt {
       0%, 100% { transform: none; }
@@ -627,6 +656,15 @@
     </div>
   </aside>
 
+  <dialog class="confirm-dialog" id="deleteDialog" aria-labelledby="deleteDialogTitle" aria-describedby="deleteDialogText">
+    <h2 id="deleteDialogTitle">Видалити відгук?</h2>
+    <p id="deleteDialogText">Відгук буде видалено з карти й каталогу.</p>
+    <div class="confirm-actions">
+      <button class="confirm-button" id="cancelDelete" type="button">Скасувати</button>
+      <button class="confirm-button destructive" id="confirmDelete" type="button">Видалити</button>
+    </div>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     (() => {
@@ -657,7 +695,7 @@
       const bean = (fill = "currentColor") =>
         '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + BEAN_PATH + '" fill="' + fill + '"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#fbf8f2" stroke-width="1.3" stroke-linecap="round"/></svg>';
       let beanClipId = 0;
-      function ratedBean(rating, index, roasted = "#5d3d2e", unroasted = "#ddd2c4") {
+      function ratedBean(rating, index, roasted = "#5d3d2e", unroasted = "#e2cdb0") {
         const fill = Math.max(0, Math.min(1, (Number(rating) || 0) - index));
         if (fill === 0) return bean(unroasted);
         if (fill === 1) return bean(roasted);
@@ -711,20 +749,20 @@
       updateCafeRatings();
 
       const ROAST_STOPS = [
-        { hex: "#bdbaa9", rgb: [189, 186, 169] },
-        { hex: "#afa089", rgb: [175, 160, 137] },
-        { hex: "#815e48", rgb: [129, 94, 72] },
-        { hex: "#7b5f51", rgb: [123, 95, 81] },
-        { hex: "#6b4b3e", rgb: [107, 75, 62] },
-        { hex: "#5d3d2e", rgb: [93, 61, 46] }
+        { hex: "#e2cdb0", rgb: [226, 205, 176] },
+        { hex: "#c7a47c", rgb: [199, 164, 124] },
+        { hex: "#a77b53", rgb: [167, 123, 83] },
+        { hex: "#7b5336", rgb: [123, 83, 54] },
+        { hex: "#4b2e1f", rgb: [75, 46, 31] }
       ];
 
       function roastColor(rating) {
         const score = Math.max(0, Math.min(5, Number(rating) || 0));
-        const lower = Math.floor(score);
-        const upper = Math.min(5, lower + 1);
-        if (lower === upper || score === lower) return ROAST_STOPS[lower].hex;
-        const amount = score - lower;
+        const step = Math.max(0, score - 1);
+        const lower = Math.floor(step);
+        const upper = Math.min(4, lower + 1);
+        if (lower === upper || step === lower) return ROAST_STOPS[lower].hex;
+        const amount = step - lower;
         const from = ROAST_STOPS[lower].rgb;
         const to = ROAST_STOPS[upper].rgb;
         return "rgb(" + from.map((value, i) => Math.round(value + (to[i] - value) * amount)).join(",") + ")";
@@ -943,11 +981,10 @@
       }
 
       function clusterIcon(count, rating) {
-        const size = count < 10 ? 34 : count < 50 ? 40 : count < 200 ? 46 : 52;
-        const textColor = rating >= 2 ? "var(--cream)" : "var(--ink)";
+        const size = count < 10 ? 42 : count < 50 ? 48 : count < 200 ? 54 : 60;
         return L.divIcon({
           className: "marker-wrap",
-          html: '<span class="cluster" style="--roast-color:' + roastColor(rating) + ';--cluster-text:' + textColor + '">' + count + "</span>",
+          html: '<span class="cluster" style="--roast-color:' + roastColor(rating) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="cluster-fill" d="' + BEAN_PATH + '"/><path class="cluster-crease" d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8"/></svg><span class="cluster-number">' + count + '</span></span>',
           iconSize: [size, size],
           iconAnchor: [size / 2, size / 2]
         });
@@ -1129,20 +1166,34 @@
 
       function updateBadge() { $("reviewsBadge").classList.toggle("on", reviews.length > 0); }
 
+      let pendingDeleteId = null;
+
+      function requestReviewDeletion(id) {
+        if (!reviews.some((item) => item.id === id)) return;
+        pendingDeleteId = id;
+        $("deleteDialogText").textContent = "Відгук буде видалено з карти й каталогу.";
+        $("deleteDialog").showModal();
+      }
+
       function deleteReview(id) {
         const review = reviews.find((item) => item.id === id);
-        if (!review || !window.confirm("Видалити цей відгук?")) return;
+        if (!review) return false;
         const previous = reviews;
         reviews = reviews.filter((item) => item.id !== id);
         if (!store.set(REVIEWS_KEY, reviews)) {
           reviews = previous;
-          return;
+          return false;
+        }
+        if (!reviews.some((item) => item.cafeId === review.cafeId)) {
+          visited.delete(review.cafeId);
+          store.set(VISITED_KEY, Array.from(visited));
         }
         updateCafeRatings();
         redraw();
         if (selectedCafe) renderCafeReviews();
         renderAllReviews();
         updateBadge();
+        return true;
       }
 
       function bump(el) {
@@ -1431,7 +1482,7 @@
       function handleReviewListClick(e) {
         const remove = e.target.closest("[data-delete-review]");
         if (remove) {
-          deleteReview(remove.dataset.deleteReview);
+          requestReviewDeletion(remove.dataset.deleteReview);
           return;
         }
         const btn = e.target.closest("[data-cafe-id]");
@@ -1440,6 +1491,27 @@
       }
       $("reviewList").addEventListener("click", handleReviewListClick);
       $("allReviewList").addEventListener("click", handleReviewListClick);
+
+      $("cancelDelete").addEventListener("click", () => {
+        pendingDeleteId = null;
+        $("deleteDialog").close();
+      });
+      $("confirmDelete").addEventListener("click", () => {
+        if (pendingDeleteId === null) return;
+        if (!deleteReview(pendingDeleteId)) {
+          $("deleteDialogText").textContent = "Не вдалося видалити відгук. Перевір вільне місце в браузері.";
+          return;
+        }
+        pendingDeleteId = null;
+        $("deleteDialog").close();
+      });
+      $("deleteDialog").addEventListener("cancel", () => { pendingDeleteId = null; });
+      $("deleteDialog").addEventListener("click", (e) => {
+        if (e.target === $("deleteDialog")) {
+          pendingDeleteId = null;
+          $("deleteDialog").close();
+        }
+      });
 
       $("searchToggle").addEventListener("click", () => setSearchOpen(!$("searchControl").classList.contains("open")));
       $("search").addEventListener("input", () => {
@@ -1482,12 +1554,12 @@
         zoomControl: false,
         minZoom: 9.5,
         maxZoom: 19,
-        zoomSnap: 1,
-        zoomDelta: 1,
-        zoomAnimation: false,
-        markerZoomAnimation: false,
-        fadeAnimation: false,
-        wheelPxPerZoomLevel: 90,
+        zoomSnap: .25,
+        zoomDelta: .5,
+        zoomAnimation: true,
+        markerZoomAnimation: true,
+        fadeAnimation: true,
+        wheelPxPerZoomLevel: 180,
         maxBounds: L.latLngBounds([[50.05, 29.9], [50.85, 31.05]]),
         maxBoundsViscosity: .9
       }).setView(KYIV_CENTER, window.innerWidth <= 700 ? 10.5 : 11.5);
@@ -1497,6 +1569,8 @@
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
+        updateWhenZooming: false,
+        keepBuffer: 2,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
       }).addTo(map);
 
