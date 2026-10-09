@@ -9,7 +9,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <style>
     :root {
       --ink: #2b1d16;
@@ -467,7 +466,7 @@
       height: 32px;
       display: grid;
       place-items: center;
-      color: var(--roast-color, #c98254);
+      color: var(--roast-color, #987858);
       filter: drop-shadow(0 3px 4px rgba(43, 29, 22, .3));
       transition: transform .3s var(--spring), color .2s;
     }
@@ -485,7 +484,7 @@
       transition: transform .3s var(--spring);
     }
     .cluster svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-24deg); filter: drop-shadow(0 3px 4px rgba(43, 29, 22, .3)); }
-    .cluster-fill { fill: var(--roast-color, #452b20); stroke: rgba(251, 248, 242, .8); stroke-width: .55; }
+    .cluster-fill { fill: var(--roast-color, #3d291f); stroke: rgba(251, 248, 242, .8); stroke-width: .55; }
     .cluster-crease { fill: none; stroke: rgba(251, 248, 242, .84); stroke-width: 1.15; stroke-linecap: round; }
     .cluster-number {
       position: relative;
@@ -668,7 +667,7 @@
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/supercluster@8.0.1/dist/supercluster.min.js"></script>
   <script>
     (() => {
       const CAFE_CACHE = "decaf-cafes-v6";
@@ -752,11 +751,11 @@
       updateCafeRatings();
 
       const ROAST_STOPS = [
-        { hex: "#c98254", rgb: [201, 130, 84] },
-        { hex: "#aa6744", rgb: [170, 103, 68] },
-        { hex: "#8d5034", rgb: [141, 80, 52] },
-        { hex: "#6c3f2e", rgb: [108, 63, 46] },
-        { hex: "#452b20", rgb: [69, 43, 32] }
+        { hex: "#987858", rgb: [152, 120, 88] },
+        { hex: "#806145", rgb: [128, 97, 69] },
+        { hex: "#684b36", rgb: [104, 75, 54] },
+        { hex: "#523a2b", rgb: [82, 58, 43] },
+        { hex: "#3d291f", rgb: [61, 41, 31] }
       ];
 
       function roastColor(rating) {
@@ -771,13 +770,17 @@
         return "rgb(" + from.map((value, i) => Math.round(value + (to[i] - value) * amount)).join(",") + ")";
       }
 
-      let map, cafePins, maskLayer, boundaryLayer;
+      let map, cafePins, maskLayer, boundaryLayer, cafeIndex;
       const cafeMarkers = new Map();
+      const clusterMarkers = new Map();
+      let activePins = new Map();
       const cafeById = new Map();
       let selectedCafe = null;
       let onlyVisited = false;
       let drawFrame = 0;
       let drawTimer = 0;
+      let renderedZoomBucket = null;
+      let lastQueryBounds = null;
       let ratingPreview = null;
 
       const LIFECYCLE = ["disused", "abandoned", "vacant", "demolished", "removed", "razed", "destroyed", "closed"];
@@ -996,62 +999,127 @@
         });
       }
 
-      function clusterRating(cluster) {
-        const markers = cluster.getAllChildMarkers();
-        let total = 0;
-        let rated = 0;
-        markers.forEach((marker) => {
-          const score = cafeRatings.get(marker.cafeId) || 0;
-          if (!score) return;
-          total += score;
-          rated += 1;
-        });
-        return rated ? total / rated : 0;
+      function pinStyleKey(cafe) {
+        return roastColor(cafeRatings.get(cafe.id) || 0) + ":" + (selectedCafe && selectedCafe.id === cafe.id ? "selected" : "");
+      }
+
+      function updateCafeMarker(cafe) {
+        const marker = cafeMarkers.get(cafe.id);
+        if (!marker) return;
+        const styleKey = pinStyleKey(cafe);
+        if (marker.deCafeStyle === styleKey) return;
+        marker.setIcon(pinIcon(cafe));
+        marker.deCafeStyle = styleKey;
       }
 
       function drawPins() {
-        if (!cafePins) return;
-        cafeById.clear();
-        cafes.forEach((cafe) => cafeById.set(cafe.id, cafe));
-        const query = $("search").value.trim().toLocaleLowerCase("uk");
-        const places = cafes.filter((cafe) =>
-          (!onlyVisited || visited.has(cafe.id)) &&
-          (!query || (cafe.name + " " + cafe.address).toLocaleLowerCase("uk").includes(query))
-        );
-        const markers = places.map((cafe) => {
+        if (!cafePins || !cafeIndex || !map) return;
+        const zoom = Math.max(0, Math.floor(map.getZoom()));
+        const bounds = map.getBounds().pad(.45);
+        const features = cafeIndex.getClusters([
+          bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()
+        ], zoom);
+        const nextPins = new Map();
+
+        features.forEach((feature) => {
+          const [lon, lat] = feature.geometry.coordinates;
+          const properties = feature.properties;
+          if (properties.cluster) {
+            const key = "cluster:" + zoom + ":" + properties.cluster_id;
+            const rating = properties.ratedCount ? properties.ratingTotal / properties.ratedCount : 0;
+            const styleKey = properties.point_count + ":" + roastColor(rating);
+            let marker = clusterMarkers.get(key);
+            if (!marker) {
+              marker = L.marker([lat, lon], { icon: clusterIcon(properties.point_count, rating), keyboard: false });
+              marker.clusterId = properties.cluster_id;
+              marker.deCafeStyle = styleKey;
+              marker.on("click", () => {
+                if (!cafeIndex) return;
+                const targetZoom = Math.min(19, cafeIndex.getClusterExpansionZoom(marker.clusterId));
+                map.flyTo(marker.getLatLng(), targetZoom, { duration: .45 });
+              });
+              clusterMarkers.set(key, marker);
+            } else {
+              marker.setLatLng([lat, lon]);
+              if (marker.deCafeStyle !== styleKey) {
+                marker.setIcon(clusterIcon(properties.point_count, rating));
+                marker.deCafeStyle = styleKey;
+              }
+            }
+            nextPins.set(key, marker);
+            return;
+          }
+
+          const cafe = cafeById.get(properties.cafeId);
+          if (!cafe) return;
+          const key = "cafe:" + cafe.id;
           let marker = cafeMarkers.get(cafe.id);
           if (!marker) {
-            marker = L.marker([cafe.lat, cafe.lon], {
-              icon: pinIcon(cafe),
-              title: cafe.name,
-              alt: cafe.name
-            });
+            marker = L.marker([lat, lon], { icon: pinIcon(cafe), title: cafe.name, alt: cafe.name });
             marker.cafeId = cafe.id;
+            marker.deCafeStyle = pinStyleKey(cafe);
             marker.on("click", () => {
               const currentCafe = cafeById.get(marker.cafeId);
               if (currentCafe) selectCafe(currentCafe);
             });
             cafeMarkers.set(cafe.id, marker);
           } else {
-            marker.setLatLng([cafe.lat, cafe.lon]);
-            marker.setIcon(pinIcon(cafe));
+            marker.setLatLng([lat, lon]);
+            updateCafeMarker(cafe);
           }
-          return marker;
+          nextPins.set(key, marker);
         });
 
-        cafePins.clearLayers();
-        cafePins.addLayers(markers);
+        activePins.forEach((marker, key) => {
+          if (!nextPins.has(key) || nextPins.get(key) !== marker) cafePins.removeLayer(marker);
+        });
+        nextPins.forEach((marker, key) => {
+          if (activePins.get(key) !== marker) cafePins.addLayer(marker);
+        });
+        activePins = nextPins;
+        renderedZoomBucket = zoom;
+        lastQueryBounds = bounds;
+      }
+
+      function schedulePinDraw() {
+        if (drawFrame) return;
+        drawFrame = requestAnimationFrame(() => {
+          drawFrame = 0;
+          drawPins();
+        });
       }
 
       function redraw() {
         clearTimeout(drawTimer);
         drawTimer = setTimeout(() => {
           drawTimer = 0;
-          if (drawFrame) cancelAnimationFrame(drawFrame);
-          drawFrame = requestAnimationFrame(() => {
-            drawFrame = 0;
-            drawPins();
+          const places = visibleCafes();
+          cafeById.clear();
+          const points = places.map((cafe) => {
+            cafeById.set(cafe.id, cafe);
+            return {
+              type: "Feature",
+              properties: { cafeId: cafe.id, rating: cafeRatings.get(cafe.id) || 0 },
+              geometry: { type: "Point", coordinates: [cafe.lon, cafe.lat] }
+            };
           });
+          cafeIndex = new window.Supercluster({
+            radius: 58,
+            maxZoom: 18,
+            minPoints: 2,
+            map: (properties) => ({
+              ratingTotal: properties.rating || 0,
+              ratedCount: properties.rating > 0 ? 1 : 0
+            }),
+            reduce: (total, properties) => {
+              total.ratingTotal += properties.ratingTotal;
+              total.ratedCount += properties.ratedCount;
+            }
+          }).load(points);
+          clusterMarkers.clear();
+          renderedZoomBucket = null;
+          lastQueryBounds = null;
+          schedulePinDraw();
         }, 100);
       }
 
@@ -1259,11 +1327,9 @@
         const changed = !selectedCafe || selectedCafe.id !== cafe.id;
         selectedCafe = cafe;
         if (previousCafe && previousCafe.id !== cafe.id) {
-          const previousMarker = cafeMarkers.get(previousCafe.id);
-          if (previousMarker) previousMarker.setIcon(pinIcon(previousCafe));
+          updateCafeMarker(previousCafe);
         }
-        const selectedMarker = cafeMarkers.get(cafe.id);
-        if (selectedMarker) selectedMarker.setIcon(pinIcon(cafe));
+        updateCafeMarker(cafe);
         $("cafeName").textContent = cafe.name;
         $("cafeAddress").textContent = cafe.address;
         $("cafeAddress").hidden = !cafe.address;
@@ -1282,8 +1348,7 @@
         if (!selectedCafe) return;
         const cafe = selectedCafe;
         selectedCafe = null;
-        const marker = cafeMarkers.get(cafe.id);
-        if (marker) marker.setIcon(pinIcon(cafe));
+        updateCafeMarker(cafe);
         $("cafeCard").classList.remove("open");
       }
 
@@ -1554,7 +1619,7 @@
         else closeCard();
       });
 
-      if (!window.L || typeof L.markerClusterGroup !== "function") {
+      if (!window.L || typeof window.Supercluster !== "function") {
         showStatus("error");
         return;
       }
@@ -1564,12 +1629,12 @@
         zoomControl: false,
         minZoom: 9.5,
         maxZoom: 19,
-        zoomSnap: .25,
+        zoomSnap: .5,
         zoomDelta: .5,
         zoomAnimation: true,
         markerZoomAnimation: true,
         fadeAnimation: true,
-        wheelPxPerZoomLevel: 180,
+        wheelPxPerZoomLevel: 240,
         maxBounds: L.latLngBounds([[50.05, 29.9], [50.85, 31.05]]),
         maxBoundsViscosity: .9
       }).setView(KYIV_CENTER, window.innerWidth <= 700 ? 10.5 : 11.5);
@@ -1586,15 +1651,14 @@
 
       maskLayer = L.layerGroup().addTo(map);
       boundaryLayer = L.layerGroup().addTo(map);
-      cafePins = L.markerClusterGroup({
-        maxClusterRadius: (zoom) => zoom < 15 ? 84 : zoom < 18 ? 64 : 44,
-        spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false,
-        removeOutsideVisibleBounds: true,
-        animate: false,
-        animateAddingMarkers: false,
-        iconCreateFunction: (cluster) => clusterIcon(cluster.getChildCount(), clusterRating(cluster))
-      }).addTo(map);
+      cafePins = L.layerGroup().addTo(map);
+
+      map.on("moveend", () => {
+        const zoom = Math.max(0, Math.floor(map.getZoom()));
+        if (zoom !== renderedZoomBucket || !lastQueryBounds || !lastQueryBounds.contains(map.getBounds())) {
+          schedulePinDraw();
+        }
+      });
 
       map.on("click", () => {
         setDrawerOpen(false);
