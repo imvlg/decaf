@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <style>
     :root {
       --ink: #2b1d16;
@@ -466,11 +467,12 @@
       height: 32px;
       display: grid;
       place-items: center;
-      color: var(--roast-color, #e2cdb0);
+      color: var(--roast-color, #c98254);
       filter: drop-shadow(0 3px 4px rgba(43, 29, 22, .3));
       transition: transform .3s var(--spring), color .2s;
     }
     .pin svg { width: 26px; height: 26px; transform: rotate(-24deg); }
+    .pin svg path:first-child { stroke: rgba(55, 33, 22, .82); stroke-width: .7; paint-order: stroke fill; stroke-linejoin: round; }
     .pin:hover { transform: scale(1.18); }
     .pin.selected { transform: scale(1.4); }
     .cluster {
@@ -483,7 +485,7 @@
       transition: transform .3s var(--spring);
     }
     .cluster svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-24deg); filter: drop-shadow(0 3px 4px rgba(43, 29, 22, .3)); }
-    .cluster-fill { fill: var(--roast-color, #4b2e1f); stroke: rgba(251, 248, 242, .8); stroke-width: .55; }
+    .cluster-fill { fill: var(--roast-color, #452b20); stroke: rgba(251, 248, 242, .8); stroke-width: .55; }
     .cluster-crease { fill: none; stroke: rgba(251, 248, 242, .84); stroke-width: 1.15; stroke-linecap: round; }
     .cluster-number {
       position: relative;
@@ -666,6 +668,7 @@
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script>
     (() => {
       const CAFE_CACHE = "decaf-cafes-v6";
@@ -749,11 +752,11 @@
       updateCafeRatings();
 
       const ROAST_STOPS = [
-        { hex: "#e2cdb0", rgb: [226, 205, 176] },
-        { hex: "#c7a47c", rgb: [199, 164, 124] },
-        { hex: "#a77b53", rgb: [167, 123, 83] },
-        { hex: "#7b5336", rgb: [123, 83, 54] },
-        { hex: "#4b2e1f", rgb: [75, 46, 31] }
+        { hex: "#c98254", rgb: [201, 130, 84] },
+        { hex: "#aa6744", rgb: [170, 103, 68] },
+        { hex: "#8d5034", rgb: [141, 80, 52] },
+        { hex: "#6c3f2e", rgb: [108, 63, 46] },
+        { hex: "#452b20", rgb: [69, 43, 32] }
       ];
 
       function roastColor(rating) {
@@ -769,9 +772,12 @@
       }
 
       let map, cafePins, maskLayer, boundaryLayer;
+      const cafeMarkers = new Map();
+      const cafeById = new Map();
       let selectedCafe = null;
       let onlyVisited = false;
       let drawFrame = 0;
+      let drawTimer = 0;
       let ratingPreview = null;
 
       const LIFECYCLE = ["disused", "abandoned", "vacant", "demolished", "removed", "razed", "destroyed", "closed"];
@@ -990,67 +996,63 @@
         });
       }
 
+      function clusterRating(cluster) {
+        const markers = cluster.getAllChildMarkers();
+        let total = 0;
+        let rated = 0;
+        markers.forEach((marker) => {
+          const score = cafeRatings.get(marker.cafeId) || 0;
+          if (!score) return;
+          total += score;
+          rated += 1;
+        });
+        return rated ? total / rated : 0;
+      }
+
       function drawPins() {
-        if (!map) return;
-        cafePins.clearLayers();
-        const bounds = map.getBounds().pad(.15);
+        if (!cafePins) return;
+        cafeById.clear();
+        cafes.forEach((cafe) => cafeById.set(cafe.id, cafe));
         const query = $("search").value.trim().toLocaleLowerCase("uk");
         const places = cafes.filter((cafe) =>
           (!onlyVisited || visited.has(cafe.id)) &&
-          (!query || (cafe.name + " " + cafe.address).toLocaleLowerCase("uk").includes(query)) &&
-          bounds.contains([cafe.lat, cafe.lon])
+          (!query || (cafe.name + " " + cafe.address).toLocaleLowerCase("uk").includes(query))
         );
-        const zoom = map.getZoom();
-
-        const addPin = (cafe) => {
-          const marker = L.marker([cafe.lat, cafe.lon], {
-            icon: pinIcon(cafe),
-            title: cafe.name,
-            alt: cafe.name,
-            zIndexOffset: selectedCafe && selectedCafe.id === cafe.id ? 1000 : 0
-          });
-          marker.on("click", () => selectCafe(cafe));
-          marker.addTo(cafePins);
-        };
-
-        if (zoom >= 19) {
-          places.forEach(addPin);
-        } else {
-          const groups = new Map();
-          places.forEach((cafe) => {
-            const p = map.project([cafe.lat, cafe.lon], zoom);
-            const key = Math.floor(p.x / 64) + ":" + Math.floor(p.y / 64);
-            if (!groups.has(key)) groups.set(key, []);
-            groups.get(key).push(cafe);
-          });
-          groups.forEach((group) => {
-            if (group.length === 1) return addPin(group[0]);
-            const center = [
-              group.reduce((s, c) => s + c.lat, 0) / group.length,
-              group.reduce((s, c) => s + c.lon, 0) / group.length
-            ];
-            const scores = group.map((cafe) => cafeRatings.get(cafe.id) || 0).filter(Boolean);
-            const rating = scores.length ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
-            const marker = L.marker(center, { icon: clusterIcon(group.length, rating) });
-            marker.on("click", () => {
-              const groupBounds = L.latLngBounds(group.map((c) => [c.lat, c.lon]));
-              if (groupBounds.getNorthEast().distanceTo(groupBounds.getSouthWest()) < 5) {
-                map.flyTo(center, Math.min(19, zoom + 3), { duration: .5 });
-              } else {
-                map.flyToBounds(groupBounds, { padding: [70, 70], maxZoom: Math.min(19, zoom + 4), duration: .5 });
-              }
+        const markers = places.map((cafe) => {
+          let marker = cafeMarkers.get(cafe.id);
+          if (!marker) {
+            marker = L.marker([cafe.lat, cafe.lon], {
+              icon: pinIcon(cafe),
+              title: cafe.name,
+              alt: cafe.name
             });
-            marker.addTo(cafePins);
-          });
-        }
+            marker.cafeId = cafe.id;
+            marker.on("click", () => {
+              const currentCafe = cafeById.get(marker.cafeId);
+              if (currentCafe) selectCafe(currentCafe);
+            });
+            cafeMarkers.set(cafe.id, marker);
+          } else {
+            marker.setLatLng([cafe.lat, cafe.lon]);
+            marker.setIcon(pinIcon(cafe));
+          }
+          return marker;
+        });
+
+        cafePins.clearLayers();
+        cafePins.addLayers(markers);
       }
 
       function redraw() {
-        if (drawFrame) return;
-        drawFrame = requestAnimationFrame(() => {
-          drawFrame = 0;
-          drawPins();
-        });
+        clearTimeout(drawTimer);
+        drawTimer = setTimeout(() => {
+          drawTimer = 0;
+          if (drawFrame) cancelAnimationFrame(drawFrame);
+          drawFrame = requestAnimationFrame(() => {
+            drawFrame = 0;
+            drawPins();
+          });
+        }, 100);
       }
 
 
@@ -1253,8 +1255,15 @@
 
       function selectCafe(cafe, fly = false) {
         setDrawerOpen(false);
+        const previousCafe = selectedCafe;
         const changed = !selectedCafe || selectedCafe.id !== cafe.id;
         selectedCafe = cafe;
+        if (previousCafe && previousCafe.id !== cafe.id) {
+          const previousMarker = cafeMarkers.get(previousCafe.id);
+          if (previousMarker) previousMarker.setIcon(pinIcon(previousCafe));
+        }
+        const selectedMarker = cafeMarkers.get(cafe.id);
+        if (selectedMarker) selectedMarker.setIcon(pinIcon(cafe));
         $("cafeName").textContent = cafe.name;
         $("cafeAddress").textContent = cafe.address;
         $("cafeAddress").hidden = !cafe.address;
@@ -1267,14 +1276,15 @@
         renderCafeReviews();
         $("cafeCard").classList.add("open");
         if (fly) map.flyTo([cafe.lat, cafe.lon], Math.max(map.getZoom(), 17), { duration: .6 });
-        redraw();
       }
 
       function closeCard() {
         if (!selectedCafe) return;
+        const cafe = selectedCafe;
         selectedCafe = null;
+        const marker = cafeMarkers.get(cafe.id);
+        if (marker) marker.setIcon(pinIcon(cafe));
         $("cafeCard").classList.remove("open");
-        redraw();
       }
 
       function setSearchOpen(open) {
@@ -1544,7 +1554,7 @@
         else closeCard();
       });
 
-      if (!window.L) {
+      if (!window.L || typeof L.markerClusterGroup !== "function") {
         showStatus("error");
         return;
       }
@@ -1576,9 +1586,16 @@
 
       maskLayer = L.layerGroup().addTo(map);
       boundaryLayer = L.layerGroup().addTo(map);
-      cafePins = L.layerGroup().addTo(map);
+      cafePins = L.markerClusterGroup({
+        maxClusterRadius: (zoom) => zoom < 15 ? 84 : zoom < 18 ? 64 : 44,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        removeOutsideVisibleBounds: true,
+        animate: false,
+        animateAddingMarkers: false,
+        iconCreateFunction: (cluster) => clusterIcon(cluster.getChildCount(), clusterRating(cluster))
+      }).addTo(map);
 
-      map.on("moveend", () => redraw());
       map.on("click", () => {
         setDrawerOpen(false);
         if (!$("search").value) setSearchOpen(false);
