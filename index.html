@@ -730,6 +730,8 @@
       }
 
       let map, maskLayer, boundaryLayer, cafeCanvas, cafeCanvasContext;
+      let cafeCanvasOriginLatLng = null;
+      let cafeCanvasBaseZoom = null;
       let mapCafes = [];
       let visiblePins = [];
       const cafeById = new Map();
@@ -935,12 +937,17 @@
 
       function createCafeCanvas() {
         cafeCanvas = document.createElement("canvas");
-        cafeCanvas.className = "cafe-canvas";
+        cafeCanvas.className = "cafe-canvas leaflet-zoom-animated";
         cafeCanvas.setAttribute("aria-hidden", "true");
         map.getPane("markerPane").append(cafeCanvas);
         cafeCanvasContext = cafeCanvas.getContext("2d", { alpha: true });
       }
 
+      function animateCafeCanvas(event) {
+        if (!cafeCanvas || !cafeCanvasOriginLatLng || cafeCanvasBaseZoom == null) return;
+        const offset = map._latLngToNewLayerPoint(cafeCanvasOriginLatLng, event.zoom, event.center);
+        L.DomUtil.setTransform(cafeCanvas, offset, map.getZoomScale(event.zoom, cafeCanvasBaseZoom));
+      }
       function drawBean(context, x, y, size, cafe) {
         const selected = selectedCafe && selectedCafe.id === cafe.id;
         const displaySize = size + (selected ? 5 : 0);
@@ -989,7 +996,8 @@
         const size = map.getSize();
         if (!size.x || !size.y) return;
 
-        const ratio = Math.min(2, window.devicePixelRatio || 1);
+        const maxRatio = window.innerWidth <= 700 ? 2 : 1.5;
+        const ratio = Math.min(maxRatio, window.devicePixelRatio || 1);
         const width = Math.round(size.x * ratio);
         const height = Math.round(size.y * ratio);
         if (cafeCanvas.width !== width || cafeCanvas.height !== height) {
@@ -1004,6 +1012,8 @@
         context.clearRect(0, 0, size.x, size.y);
 
         const origin = map.containerPointToLayerPoint([0, 0]);
+        cafeCanvasOriginLatLng = map.containerPointToLatLng([0, 0]);
+        cafeCanvasBaseZoom = map.getZoom();
         L.DomUtil.setPosition(cafeCanvas, origin);
         const bounds = map.getBounds();
         const zoom = map.getZoom();
@@ -1567,7 +1577,7 @@
         zoomAnimation: true,
         markerZoomAnimation: true,
         fadeAnimation: false,
-        wheelPxPerZoomLevel: 240,
+        wheelPxPerZoomLevel: 100,
         maxBounds: L.latLngBounds([[50.05, 29.9], [50.85, 31.05]]),
         maxBoundsViscosity: .9
       }).setView(KYIV_CENTER, window.innerWidth <= 700 ? 10.5 : 11.5);
@@ -1585,6 +1595,7 @@
       maskLayer = L.layerGroup().addTo(map);
       boundaryLayer = L.layerGroup().addTo(map);
       createCafeCanvas();
+      map.on("zoomanim", animateCafeCanvas);
       map.on("moveend resize", schedulePinDraw);
 
       map.on("click", (event) => {
