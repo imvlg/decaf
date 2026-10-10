@@ -532,6 +532,8 @@
         touch-action: none;
         cursor: grab;
       }
+      #cafeCard .sheet-handle { background: transparent; }
+      #cafeCard .sheet-handle::before { display: none; }
       .sheet-handle::before { content: ""; display: block; width: 36px; height: 4px; margin: auto; border-radius: 4px; background: var(--faint); }
       .sheet.compact { max-height: 50dvh; }
       .sheet-title h1, .sheet-title h2 { font-size: 20px; }
