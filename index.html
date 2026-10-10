@@ -39,6 +39,9 @@
     #map { position: fixed; inset: 0; z-index: 0; background: #ebe5d9; }
     .leaflet-container { background: #ebe5d9; font-family: inherit; }
     .leaflet-tile-pane { filter: sepia(.38) saturate(.85) brightness(1.01) contrast(.97); }
+    @media (min-width: 701px) {
+      .leaflet-zoom-anim .leaflet-zoom-animated { transition-duration: .16s; }
+    }
     .leaflet-control-attribution {
       margin: 0 8px 6px 0 !important;
       padding: 2px 8px !important;
@@ -739,6 +742,8 @@
       let onlyVisited = false;
       let drawFrame = 0;
       let drawTimer = 0;
+      let pinPressAnimation = null;
+      const PIN_PRESS_DURATION = 360;
       let ratingPreview = null;
 
       const LIFECYCLE = ["disused", "abandoned", "vacant", "demolished", "removed", "razed", "destroyed", "closed"];
@@ -948,19 +953,17 @@
         const offset = map._latLngToNewLayerPoint(cafeCanvasOriginLatLng, event.zoom, event.center);
         L.DomUtil.setTransform(cafeCanvas, offset, map.getZoomScale(event.zoom, cafeCanvasBaseZoom));
       }
-      function drawBean(context, x, y, size, cafe) {
-        const selected = selectedCafe && selectedCafe.id === cafe.id;
-        const displaySize = size + (selected ? 5 : 0);
-        if (selected) {
-          context.beginPath();
-          context.arc(x, y, displaySize * .42, 0, Math.PI * 2);
-          context.fillStyle = "rgba(251, 248, 242, .9)";
-          context.fill();
-          context.lineWidth = 1.5;
-          context.strokeStyle = "#5d3d2e";
-          context.stroke();
-        }
+      function cafePressScale(cafeId, now) {
+        if (!pinPressAnimation || pinPressAnimation.cafeId !== cafeId) return 1;
+        const progress = Math.min(1, (now - pinPressAnimation.startedAt) / PIN_PRESS_DURATION);
+        const easeOut = (value) => 1 - Math.pow(1 - value, 3);
+        if (progress < .35) return 1 - .18 * easeOut(progress / .35);
+        if (progress < .7) return .82 + .24 * easeOut((progress - .35) / .35);
+        return 1.06 - .06 * easeOut((progress - .7) / .3);
+      }
 
+      function drawBean(context, x, y, size, cafe, scale = 1) {
+        const displaySize = size * scale;
         context.save();
         context.translate(x, y);
         context.rotate(-Math.PI / 7.5);
@@ -1020,6 +1023,7 @@
         const beanSize = zoom < 12 ? 17 : zoom < 14 ? 20 : zoom < 16 ? 23 : 26;
         visiblePins = [];
         let selectedPin = null;
+        const animationTime = performance.now();
 
         mapCafes.forEach((cafe) => {
           if (!bounds.contains([cafe.lat, cafe.lon])) return;
@@ -1032,10 +1036,10 @@
           };
           visiblePins.push(pin);
           if (selectedCafe && cafe.id === selectedCafe.id) selectedPin = pin;
-          else drawBean(context, pin.x, pin.y, beanSize, cafe);
+          else drawBean(context, pin.x, pin.y, beanSize, cafe, cafePressScale(cafe.id, animationTime));
         });
 
-        if (selectedPin) drawBean(context, selectedPin.x, selectedPin.y, beanSize, selectedPin.cafe);
+        if (selectedPin) drawBean(context, selectedPin.x, selectedPin.y, beanSize, selectedPin.cafe, cafePressScale(selectedPin.cafe.id, animationTime));
       }
 
       function schedulePinDraw() {
@@ -1043,9 +1047,22 @@
         drawFrame = requestAnimationFrame(() => {
           drawFrame = 0;
           drawPins();
+          if (pinPressAnimation) {
+            if (performance.now() - pinPressAnimation.startedAt < PIN_PRESS_DURATION) schedulePinDraw();
+            else pinPressAnimation = null;
+          }
         });
       }
 
+      function animateCafePinPress(cafe) {
+        if (reduceMotion) return;
+        pinPressAnimation = { cafeId: cafe.id, startedAt: performance.now() };
+        schedulePinDraw();
+      }
+
+      function schedulePinDrawOnPinch(event) {
+        if (event && event.pinch) schedulePinDraw();
+      }
       function redraw() {
         clearTimeout(drawTimer);
         drawTimer = setTimeout(() => {
@@ -1577,7 +1594,7 @@
         zoomAnimation: true,
         markerZoomAnimation: true,
         fadeAnimation: false,
-        wheelPxPerZoomLevel: 100,
+        wheelPxPerZoomLevel: 60,
         maxBounds: L.latLngBounds([[50.05, 29.9], [50.85, 31.05]]),
         maxBoundsViscosity: .9
       }).setView(KYIV_CENTER, window.innerWidth <= 700 ? 10.5 : 11.5);
@@ -1596,11 +1613,12 @@
       boundaryLayer = L.layerGroup().addTo(map);
       createCafeCanvas();
       map.on("zoomanim", animateCafeCanvas);
+      map.on("zoom", schedulePinDrawOnPinch);
       map.on("moveend resize", schedulePinDraw);
 
       map.on("click", (event) => {
         const cafe = cafeAtPoint(event.containerPoint);
-        if (cafe) selectCafe(cafe);
+        if (cafe) { animateCafePinPress(cafe); selectCafe(cafe); }
         setDrawerOpen(false);
         if (!$("search").value) setSearchOpen(false);
       });
