@@ -649,6 +649,12 @@
       const KYIV_AREA = 3600421866;
       const KYIV_RELATION = 421866;
       const KYIV_CENTER = [50.4501, 30.5234];
+      const MANUAL_CAFES = [
+        { id: "manual/slou-hospitalna-2", name: "Slou Coffee", address: "вул. Госпітальна, 2", lat: 50.437855, lon: 30.524426 }
+      ];
+      const MANUALLY_CLOSED_CAFES = [
+        { name: "Aroma Kava", lat: 50.433971, lon: 30.530467, radiusMeters: 70 }
+      ];
       const CAFE_TTL = 12 * 60 * 60 * 1000;
       const BOUNDARY_TTL = 30 * 24 * 60 * 60 * 1000;
       const OVERPASS_TIMEOUT = window.innerWidth <= 700 ? 25000 : 45000;
@@ -761,6 +767,7 @@
       const NOT_COFFEE_CUISINE = /ice_cream|frozen_yogurt|bubble_tea|\btea\b|hookah|shisha|pizza|burger|sushi|kebab|shawarma|chicken|hot_dog|fast_food|bbq|noodle|ramen|restaurant|bistro|steak_house|seafood/;
       const NOT_COFFEE_NAME = /кальян|hookah|shisha|морозив|ice ?cream|gelato|bubble|шаурм|shawarm|піц|pizz|суші|sushi|бургер|burger|чайхан|tea ?house|їдальн|столова|хінкал|вареничн|пельмен|ресторан|restaurant|бістро|bistro|стейк|steak/i;
       cafes = cafes.filter((cafe) => !NOT_COFFEE_NAME.test(cafe.name || "") && !/закрит|зачинен|не працює|closed/i.test(cafe.name || ""));
+      cafes = applyCafeCorrections(cafes);
       function isOperating(tags) {
         for (const key in tags) {
           if (LIFECYCLE.includes(key.split(":")[0])) return false;
@@ -820,6 +827,38 @@
           });
         });
         return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, "uk"));
+      }
+
+      function normalizedCafeText(value) {
+        return String(value || "").toLocaleLowerCase("uk").replace(/[^a-zа-яіїє0-9]/gi, "");
+      }
+
+      function distanceMeters(lat1, lon1, lat2, lon2) {
+        const meanLat = (lat1 + lat2) * Math.PI / 360;
+        const dx = (lon2 - lon1) * 111320 * Math.cos(meanLat);
+        const dy = (lat2 - lat1) * 111320;
+        return Math.hypot(dx, dy);
+      }
+
+      function applyCafeCorrections(list) {
+        const corrected = list.filter((cafe) => {
+          const name = normalizedCafeText(cafe.name);
+          if (!name.includes("aromakava") && !name.includes("аромакава")) return true;
+          return !MANUALLY_CLOSED_CAFES.some((closed) =>
+            distanceMeters(cafe.lat, cafe.lon, closed.lat, closed.lon) <= closed.radiusMeters
+          );
+        });
+
+        MANUAL_CAFES.forEach((manualCafe) => {
+          const existingIndex = corrected.findIndex((cafe) =>
+            normalizedCafeText(cafe.name).includes("slou") &&
+            distanceMeters(cafe.lat, cafe.lon, manualCafe.lat, manualCafe.lon) <= 80
+          );
+          if (existingIndex === -1) corrected.push(manualCafe);
+          else corrected[existingIndex] = { ...corrected[existingIndex], ...manualCafe };
+        });
+
+        return corrected.sort((a, b) => a.name.localeCompare(b.name, "uk"));
       }
 
       function parseCityBoundary(elements) {
@@ -893,9 +932,9 @@
           const elements = await overpass(
             "[out:json][timeout:90];area(" + KYIV_AREA + ")->.k;nwr[\"amenity\"=\"cafe\"](area.k);out center;"
           );
-          const latest = parseCafes(elements);
-          if (!latest.length) throw new Error("Empty");
-          cafes = latest;
+          const parsed = parseCafes(elements);
+          if (!parsed.length) throw new Error("Empty");
+          cafes = applyCafeCorrections(parsed);
           cafesFetchedAt = Date.now();
           store.set(CAFE_CACHE, { places: cafes, fetchedAt: cafesFetchedAt });
           hideStatus();
