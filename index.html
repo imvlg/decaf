@@ -34,6 +34,7 @@
     button, input, textarea { font: inherit; color: inherit; }
     button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     svg { display: block; }
+    img { -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }
 
     /* ---------- map ---------- */
     #map { position: fixed; inset: 0; z-index: 0; background: #ebe5d9; }
@@ -633,6 +634,14 @@
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     (() => {
+      const isImageElement = (target) => target instanceof Element && target.closest("img");
+      document.addEventListener("contextmenu", (event) => {
+        if (isImageElement(event.target)) event.preventDefault();
+      });
+      document.addEventListener("dragstart", (event) => {
+        if (isImageElement(event.target)) event.preventDefault();
+      });
+
       const CAFE_CACHE = "decaf-cafes-v6";
       const BOUNDARY_CACHE = "decaf-boundary-v1";
       const VISITED_KEY = "decaf-visited-v1";
