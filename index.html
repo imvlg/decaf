@@ -787,6 +787,14 @@
       let sharedRefreshTimer = 0;
       let sharedChannel = null;
 
+      // The feed belongs to the invite-only version. Show its control while connecting,
+      // so a server setup error does not make the feature appear to be missing.
+      if (sharedRequested) {
+        $("reviewsToggle").hidden = false;
+        $("reviewsToggle").setAttribute("aria-label", "Стрічка друзів");
+        $("reviewsToggle").title = "Стрічка друзів";
+      }
+
       const currentCafeCache = store.get(CAFE_CACHE, null);
       const cafeCache = currentCafeCache || store.get("decaf-cafes-v5", {});
       const boundaryCache = store.get(BOUNDARY_CACHE, {});
@@ -799,7 +807,7 @@
       let boundaryFetchedAt = Number(boundaryCache.fetchedAt) || 0;
       let visited = new Set([].concat(store.get(VISITED_KEY, [])));
       const localReviews = [].concat(store.get(REVIEWS_KEY, []));
-      let reviews = localReviews.slice();
+      let reviews = sharedRequested ? [] : localReviews.slice();
       const cafeRatings = new Map();
 
       function updateCafeRatings() {
@@ -1480,12 +1488,37 @@ const latest = parseCafes(elements);
           .subscribe();
       }
 
+      function sharedConnectionHint(error) {
+        const message = String(error && (error.message || error.error_description) || error || "").trim();
+        const lower = message.toLowerCase();
+        if (lower.includes("invite link is invalid or disabled")) {
+          return "Запрошення не зареєстроване або вимкнене в public.de_caf_invites. Запусти SQL для invite-посилання.";
+        }
+        if (lower.includes("anonymous sign-ins") || lower.includes("anonymous sign-in") || lower.includes("anonymous provider")) {
+          return "У Supabase увімкни Anonymous Sign-Ins: Authentication → Sign In / Providers.";
+        }
+        if (lower.includes("de_caf_join") && (lower.includes("schema cache") || lower.includes("could not find") || lower.includes("function"))) {
+          return "Supabase не знаходить de_caf_join. Перевір, чи виконано schema.sql у SQL Editor.";
+        }
+        if (lower.includes("row-level security") || lower.includes("permission denied") || lower.includes("not allowed") || lower.includes("permission")) {
+          return "Supabase відхилив доступ. Перевір таблиці, права GRANT і RLS із schema.sql.";
+        }
+        if (lower.includes("invalid api key") || lower.includes("no api key") || lower.includes("project not found") || lower.includes("jwt")) {
+          return "Перевір URL і Publishable/anon key у supabase-config.js.";
+        }
+        if (lower.includes("failed to fetch") || lower.includes("networkerror") || lower.includes("load failed")) {
+          return "Не вдалося звернутися до Supabase/CDN. Перевір URL у конфігурації та мережу.";
+        }
+        return message ? "Помилка Supabase: " + message.slice(0, 115) : "Не вдалося підключитися до спільної мапи.";
+      }
+
       async function initializeSharedWorkspace() {
         if (!sharedRequested) return;
         const publishableKey = sharedConfig.publishableKey || sharedConfig.anonKey;
         if (!sharedConfig.url || !publishableKey) {
           showStatus("error");
-          $("statusText").textContent = "Спільний сервер ще не налаштований";
+          $("statusText").textContent = "Немає URL або ключа Supabase в supabase-config.js";
+          $("status").title = "Очікується window.DECAF_SHARED_CONFIG = { url, publishableKey } (або anonKey). Переконайся, що supabase-config.js завантажується з кореня сайту.";
           $("retry").hidden = true;
           return;
         }
@@ -1535,7 +1568,8 @@ const latest = parseCafes(elements);
         } catch (error) {
           console.error("Could not open de caf shared map", error);
           showStatus("error");
-          $("statusText").textContent = "Не вдалося підключитися до спільної мапи";
+          $("statusText").textContent = sharedConnectionHint(error);
+          $("status").title = String(error && (error.message || error.error_description) || error || "");
           $("retry").hidden = true;
         }
       }
@@ -2036,7 +2070,14 @@ const latest = parseCafes(elements);
         redraw();
       });
 
-      $("reviewsToggle").addEventListener("click", () => setDrawerOpen(!$("reviewsDrawer").classList.contains("open")));
+      $("reviewsToggle").addEventListener("click", () => {
+        if (sharedRequested && !sharedReady) {
+          showStatus("error");
+          $("statusText").textContent = "Стрічка поки недоступна — виправ підключення Supabase";
+          return;
+        }
+        setDrawerOpen(!$("reviewsDrawer").classList.contains("open"));
+      });
       $("closeReviews").addEventListener("click", () => setDrawerOpen(false));
       function handleReviewListClick(e) {
         const remove = e.target.closest("[data-delete-review]");
