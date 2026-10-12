@@ -35,11 +35,15 @@
     button, input, textarea { font: inherit; color: inherit; }
     button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     svg { display: block; }
+    img { -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }
 
     /* ---------- map ---------- */
     #map { position: fixed; inset: 0; z-index: 0; background: #ebe5d9; }
     .leaflet-container { background: #ebe5d9; font-family: inherit; }
     .leaflet-tile-pane { filter: sepia(.38) saturate(.85) brightness(1.01) contrast(.97); }
+    @media (min-width: 701px) {
+      .leaflet-zoom-anim .leaflet-zoom-animated { transition-duration: .16s; }
+    }
     .leaflet-control-attribution {
       margin: 0 8px 6px 0 !important;
       padding: 2px 8px !important;
@@ -541,6 +545,8 @@
         touch-action: none;
         cursor: grab;
       }
+      #cafeCard .sheet-handle { background: transparent; }
+      #cafeCard .sheet-handle::before { display: none; }
       .sheet-handle::before { content: ""; display: block; width: 36px; height: 4px; margin: auto; border-radius: 4px; background: var(--faint); }
       .sheet.compact { max-height: 50dvh; }
       .sheet-title h1, .sheet-title h2 { font-size: 20px; }
@@ -680,6 +686,14 @@
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     (() => {
+      const isImageElement = (target) => target instanceof Element && target.closest("img");
+      document.addEventListener("contextmenu", (event) => {
+        if (isImageElement(event.target)) event.preventDefault();
+      });
+      document.addEventListener("dragstart", (event) => {
+        if (isImageElement(event.target)) event.preventDefault();
+      });
+
       const CAFE_CACHE = "decaf-cafes-v6";
       const BOUNDARY_CACHE = "decaf-boundary-v1";
       const VISITED_KEY = "decaf-visited-v1";
@@ -692,6 +706,12 @@
       const KYIV_AREA = 3600421866;
       const KYIV_RELATION = 421866;
       const KYIV_CENTER = [50.4501, 30.5234];
+      const MANUAL_CAFES = [
+        { id: "manual/slou-hospitalna-2", name: "Slou Coffee", address: "вул. Госпітальна, 2", lat: 50.437855, lon: 30.524426 }
+      ];
+      const MANUALLY_CLOSED_CAFES = [
+        { name: "Aroma Kava", lat: 50.433971, lon: 30.530467, radiusMeters: 70 }
+      ];
       const CAFE_TTL = 12 * 60 * 60 * 1000;
       const BOUNDARY_TTL = 30 * 24 * 60 * 60 * 1000;
       const OVERPASS_TIMEOUT = window.innerWidth <= 700 ? 25000 : 45000;
@@ -804,6 +824,8 @@
       }
 
       let map, maskLayer, boundaryLayer, cafeCanvas, cafeCanvasContext;
+      let cafeCanvasOriginLatLng = null;
+      let cafeCanvasBaseZoom = null;
       let mapCafes = [];
       let visiblePins = [];
       const cafeById = new Map();
@@ -811,6 +833,8 @@
       let onlyVisited = false;
       let drawFrame = 0;
       let drawTimer = 0;
+      let pinPressAnimation = null;
+      const PIN_PRESS_DURATION = 360;
       let ratingPreview = null;
       let addingCafe = false;
       let pendingCafePoint = null;
@@ -824,7 +848,7 @@
       const LIFECYCLE = ["disused", "abandoned", "vacant", "demolished", "removed", "razed", "destroyed", "closed"];
       const NOT_COFFEE_CUISINE = /ice_cream|frozen_yogurt|bubble_tea|\btea\b|hookah|shisha|pizza|burger|sushi|kebab|shawarma|chicken|hot_dog|fast_food|bbq|noodle|ramen|restaurant|bistro|steak_house|seafood/;
       const NOT_COFFEE_NAME = /кальян|hookah|shisha|морозив|ice ?cream|gelato|bubble|шаурм|shawarm|піц|pizz|суші|sushi|бургер|burger|чайхан|tea ?house|їдальн|столова|хінкал|вареничн|пельмен|ресторан|restaurant|бістро|bistro|стейк|steak/i;
-      osmCafes = osmCafes
+osmCafes = osmCafes
         .filter((cafe) => !NOT_COFFEE_NAME.test(cafe.name || "") && !/закрит|зачинен|не працює|closed/i.test(cafe.name || ""))
         .map((cafe) => ({ ...cafe, source: "osm" }));
       localCustomCafes = localCustomCafes.map((cafe) => ({ ...cafe, source: "local" }));
@@ -835,6 +859,7 @@
         osmCafes.forEach((cafe) => { if (!hiddenIds.has(cafe.id)) merged.set(cafe.id, cafe); });
         customRows.forEach((cafe) => { if (!hiddenIds.has(cafe.id)) merged.set(cafe.id, cafe); });
         cafes = Array.from(merged.values()).sort((a, b) => a.name.localeCompare(b.name, "uk"));
+        cafes = applyCafeCorrections(cafes);
       }
       refreshCafeList();
       function isOperating(tags) {
@@ -897,6 +922,38 @@
           });
         });
         return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, "uk"));
+      }
+
+      function normalizedCafeText(value) {
+        return String(value || "").toLocaleLowerCase("uk").replace(/[^a-zа-яіїє0-9]/gi, "");
+      }
+
+      function distanceMeters(lat1, lon1, lat2, lon2) {
+        const meanLat = (lat1 + lat2) * Math.PI / 360;
+        const dx = (lon2 - lon1) * 111320 * Math.cos(meanLat);
+        const dy = (lat2 - lat1) * 111320;
+        return Math.hypot(dx, dy);
+      }
+
+      function applyCafeCorrections(list) {
+        const corrected = list.filter((cafe) => {
+          const name = normalizedCafeText(cafe.name);
+          if (!name.includes("aromakava") && !name.includes("аромакава")) return true;
+          return !MANUALLY_CLOSED_CAFES.some((closed) =>
+            distanceMeters(cafe.lat, cafe.lon, closed.lat, closed.lon) <= closed.radiusMeters
+          );
+        });
+
+        MANUAL_CAFES.forEach((manualCafe) => {
+          const existingIndex = corrected.findIndex((cafe) =>
+            normalizedCafeText(cafe.name).includes("slou") &&
+            distanceMeters(cafe.lat, cafe.lon, manualCafe.lat, manualCafe.lon) <= 80
+          );
+          if (existingIndex === -1) corrected.push(manualCafe);
+          else corrected[existingIndex] = { ...corrected[existingIndex], ...manualCafe };
+        });
+
+        return corrected.sort((a, b) => a.name.localeCompare(b.name, "uk"));
       }
 
       function parseCityBoundary(elements) {
@@ -970,9 +1027,9 @@
           const elements = await overpass(
             "[out:json][timeout:90];area(" + KYIV_AREA + ")->.k;nwr[\"amenity\"=\"cafe\"](area.k);out center;"
           );
-          const latest = parseCafes(elements);
+const latest = parseCafes(elements);
           if (!latest.length) throw new Error("Empty");
-          osmCafes = latest.map((cafe) => ({ ...cafe, source: "osm" }));
+          osmCafes = applyCafeCorrections(latest).map((cafe) => ({ ...cafe, source: "osm" }));
           cafesFetchedAt = Date.now();
           store.set(CAFE_CACHE, { places: osmCafes, fetchedAt: cafesFetchedAt });
           refreshCafeList();
@@ -1031,15 +1088,28 @@
 
       function createCafeCanvas() {
         cafeCanvas = document.createElement("canvas");
-        cafeCanvas.className = "cafe-canvas";
+        cafeCanvas.className = "cafe-canvas leaflet-zoom-animated";
         cafeCanvas.setAttribute("aria-hidden", "true");
         map.getPane("markerPane").append(cafeCanvas);
         cafeCanvasContext = cafeCanvas.getContext("2d", { alpha: true });
       }
 
-      function drawBean(context, x, y, size, cafe, shake = 0) {
+      function animateCafeCanvas(event) {
+        if (!cafeCanvas || !cafeCanvasOriginLatLng || cafeCanvasBaseZoom == null) return;
+        const offset = map._latLngToNewLayerPoint(cafeCanvasOriginLatLng, event.zoom, event.center);
+        L.DomUtil.setTransform(cafeCanvas, offset, map.getZoomScale(event.zoom, cafeCanvasBaseZoom));
+      }
+      function cafePressScale(cafeId, now) {
+        if (!pinPressAnimation || pinPressAnimation.cafeId !== cafeId) return 1;
+        const progress = Math.min(1, (now - pinPressAnimation.startedAt) / PIN_PRESS_DURATION);
+        const easeOut = (value) => 1 - Math.pow(1 - value, 3);
+        if (progress < .35) return 1 - .18 * easeOut(progress / .35);
+        if (progress < .7) return .82 + .24 * easeOut((progress - .35) / .35);
+        return 1.06 - .06 * easeOut((progress - .7) / .3);
+      }
+      function drawBean(context, x, y, size, cafe, scale = 1) {
         const selected = selectedCafe && selectedCafe.id === cafe.id;
-        const displaySize = size + (selected ? 5 : 0);
+        const displaySize = size * scale + (selected ? 5 : 0);
         if (selected) {
           context.beginPath();
           context.arc(x, y, displaySize * .42, 0, Math.PI * 2);
@@ -1050,6 +1120,8 @@
           context.stroke();
         }
 
+      function drawBean(context, x, y, size, cafe, scale = 1) {
+        const displaySize = size * scale;
         context.save();
         context.translate(x, y);
         context.rotate(-Math.PI / 7.5 + shake);
@@ -1085,7 +1157,8 @@
         const size = map.getSize();
         if (!size.x || !size.y) return;
 
-        const ratio = Math.min(2, window.devicePixelRatio || 1);
+        const maxRatio = window.innerWidth <= 700 ? 2 : 1.5;
+        const ratio = Math.min(maxRatio, window.devicePixelRatio || 1);
         const width = Math.round(size.x * ratio);
         const height = Math.round(size.y * ratio);
         if (cafeCanvas.width !== width || cafeCanvas.height !== height) {
@@ -1100,6 +1173,8 @@
         context.clearRect(0, 0, size.x, size.y);
 
         const origin = map.containerPointToLayerPoint([0, 0]);
+        cafeCanvasOriginLatLng = map.containerPointToLatLng([0, 0]);
+        cafeCanvasBaseZoom = map.getZoom();
         L.DomUtil.setPosition(cafeCanvas, origin);
         const bounds = map.getBounds();
         const zoom = map.getZoom();
@@ -1107,6 +1182,7 @@
         const shake = shakingCafeId ? Math.sin(performance.now() / 34) * .15 : 0;
         visiblePins = [];
         let selectedPin = null;
+        const animationTime = performance.now();
 
         mapCafes.forEach((cafe) => {
           if (!bounds.contains([cafe.lat, cafe.lon])) return;
@@ -1119,10 +1195,14 @@
           };
           visiblePins.push(pin);
           if (selectedCafe && cafe.id === selectedCafe.id) selectedPin = pin;
-          else drawBean(context, pin.x, pin.y, beanSize, cafe, cafe.id === shakingCafeId ? shake : 0);
+          const beanScale = cafePressScale(cafe.id, animationTime) * (cafe.id === shakingCafeId ? 1 + shake / 100 : 1);
+          else drawBean(context, pin.x, pin.y, beanSize, cafe, beanScale);
         });
 
-        if (selectedPin) drawBean(context, selectedPin.x, selectedPin.y, beanSize, selectedPin.cafe, selectedPin.cafe.id === shakingCafeId ? shake : 0);
+        if (selectedPin) {
+          const selectedScale = cafePressScale(selectedPin.cafe.id, animationTime) * (selectedPin.cafe.id === shakingCafeId ? 1 + shake / 100 : 1);
+          drawBean(context, selectedPin.x, selectedPin.y, beanSize, selectedPin.cafe, selectedScale);
+        }
       }
 
       function schedulePinDraw() {
@@ -1130,9 +1210,22 @@
         drawFrame = requestAnimationFrame(() => {
           drawFrame = 0;
           drawPins();
+          if (pinPressAnimation) {
+            if (performance.now() - pinPressAnimation.startedAt < PIN_PRESS_DURATION) schedulePinDraw();
+            else pinPressAnimation = null;
+          }
         });
       }
 
+      function animateCafePinPress(cafe) {
+        if (reduceMotion) return;
+        pinPressAnimation = { cafeId: cafe.id, startedAt: performance.now() };
+        schedulePinDraw();
+      }
+
+      function schedulePinDrawOnPinch(event) {
+        if (event && event.pinch) schedulePinDraw();
+      }
       function redraw() {
         clearTimeout(drawTimer);
         drawTimer = setTimeout(() => {
@@ -2084,9 +2177,9 @@
         zoomSnap: .5,
         zoomDelta: .5,
         zoomAnimation: true,
-        markerZoomAnimation: false,
+        markerZoomAnimation: true,
         fadeAnimation: false,
-        wheelPxPerZoomLevel: 240,
+        wheelPxPerZoomLevel: 60,
         maxBounds: L.latLngBounds([[50.05, 29.9], [50.85, 31.05]]),
         maxBoundsViscosity: .9
       }).setView(KYIV_CENTER, window.innerWidth <= 700 ? 10.5 : 11.5);
@@ -2104,6 +2197,8 @@
       maskLayer = L.layerGroup().addTo(map);
       boundaryLayer = L.layerGroup().addTo(map);
       createCafeCanvas();
+      map.on("zoomanim", animateCafeCanvas);
+      map.on("zoom", schedulePinDrawOnPinch);
       map.on("moveend resize", schedulePinDraw);
 
       const mapElement = map.getContainer();
@@ -2155,7 +2250,7 @@
           return;
         }
         const cafe = cafeAtPoint(event.containerPoint);
-        if (cafe) selectCafe(cafe);
+        if (cafe) { animateCafePinPress(cafe); selectCafe(cafe); }
         setDrawerOpen(false);
         if (!$("search").value) setSearchOpen(false);
       });
