@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#efe9de">
+  <meta name="referrer" content="no-referrer">
   <title>de caf</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -461,6 +462,17 @@
     .submit:disabled { opacity: .6; cursor: wait; }
 
     .cafe-canvas { position: absolute; inset: 0 auto auto 0; pointer-events: none; }
+    #map.placing-cafe { cursor: crosshair; }
+    #map.placing-cafe .leaflet-interactive { cursor: crosshair; }
+    #addCafeToggle[aria-pressed="true"] { color: var(--cream); background: var(--roast); }
+    .map-hint { position: fixed; z-index: 510; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); padding: 11px 16px; border-radius: 999px; color: var(--ink); font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transform: translate(-50%, 8px); transition: opacity .2s, transform .2s; }
+    .map-hint.on { opacity: 1; transform: translate(-50%, 0); }
+    #map.adding-cafe { cursor: crosshair; }
+    .review-author { display: block; margin: -4px 0 8px; color: var(--muted); font-size: 11px; font-weight: 500; }
+    .dialog-field { width: 100%; height: 46px; margin: 10px 0; padding: 0 14px; border: 1px solid var(--line); border-radius: 14px; outline: 0; background: var(--tint); font-size: 14px; }
+    .dialog-field:focus { border-color: var(--clay); }
+    .confirm-dialog form { margin: 0; }
+    .dock-btn[hidden], .icon-btn[hidden] { display: none; }
 
     .confirm-dialog {
       width: min(360px, calc(100vw - 32px));
@@ -496,7 +508,7 @@
       .brand img { width: 36px; height: 42px; }
       .dock { top: calc(10px + env(safe-area-inset-top)); right: 10px; padding: 4px; border-radius: 18px; }
       .dock-btn { width: 42px; height: 42px; }
-      .search.open { width: calc(100vw - 222px); }
+      .search.open { width: calc(100vw - 266px); }
       .search input { height: 42px; }
 
       .sheet {
@@ -551,14 +563,19 @@
     <button class="dock-btn" id="searchToggle" type="button" aria-label="Пошук" aria-expanded="false" title="Пошук">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.4"/><path d="m16 16 4.2 4.2"/></svg>
     </button>
+    <button class="dock-btn" id="addCafeToggle" type="button" aria-label="Додати кав’ярню" aria-pressed="false" title="Додати кав’ярню">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 10.2c0 5.2-7.5 11.3-7.5 11.3S4.5 15.4 4.5 10.2a7.5 7.5 0 1 1 15 0Z"/><circle cx="12" cy="10" r="2.3"/><path d="M18.5 4.5h4M20.5 2.5v4"/></svg>
+    </button>
     <button class="dock-btn" id="visitedFilter" type="button" aria-label="Лише відвідані" aria-pressed="false" title="Відвідані">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><path d="m8.4 12.2 2.4 2.4 4.8-5"/></svg>
     </button>
-    <button class="dock-btn" id="reviewsToggle" type="button" aria-label="Мої відгуки" aria-expanded="false" aria-controls="reviewsDrawer" title="Відгуки">
+    <button class="dock-btn" id="reviewsToggle" type="button" aria-label="Стрічка відгуків" aria-expanded="false" aria-controls="reviewsDrawer" title="Відгуки">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-8l-4.5 3v-3H5A1.5 1.5 0 0 1 3.5 16V7A1.5 1.5 0 0 1 5 5.5Z"/><path d="M8 10h8M8 13h5"/></svg>
       <span class="dock-badge" id="reviewsBadge"></span>
     </button>
   </nav>
+
+  <div class="map-hint glass" id="mapHint" role="status">Торкнись мапи, щоб поставити точку</div>
 
   <div class="status glass" id="status" role="status">
     <svg class="status-bean" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.1c3.1 2.5 2.8 7.6-.5 12.2s-8.1 7-11.3 4.5-2.9-7.5.5-12.1 8.2-7.1 11.3-4.6Z" fill="currentColor"/><path d="M6.2 18.7C11.5 15.2 15 9.4 17.1 4.8" fill="none" stroke="#fbf8f2" stroke-width="1.4" stroke-linecap="round"/></svg>
@@ -572,6 +589,9 @@
     <div class="sheet-handle" aria-hidden="true"></div>
     <div class="sheet-head">
       <div class="sheet-title"><h2 id="drawerTitle">Відгуки <span class="count" id="reviewsCount"></span></h2></div>
+      <button class="icon-btn" id="shareInvite" type="button" aria-label="Скопіювати запрошення" title="Скопіювати запрошення" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.6 6.8-4.2m-6.8 9 6.8 4.1"/></svg>
+      </button>
       <button class="icon-btn" id="closeReviews" type="button" aria-label="Закрити">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
       </button>
@@ -625,6 +645,38 @@
     </div>
   </dialog>
 
+  <dialog class="confirm-dialog" id="profileDialog" aria-labelledby="profileTitle">
+    <h2 id="profileTitle">Як тебе називати?</h2>
+    <p>Нік буде біля твоїх відгуків. Відгуки й фото зберігаються в Supabase та доступні всім, хто має запрошення. Не додавай чутливих даних.</p>
+    <form id="profileForm">
+      <input class="dialog-field" id="profileName" maxlength="32" autocomplete="nickname" placeholder="Ім’я або нік" required>
+      <div class="confirm-actions"><button class="confirm-button destructive" type="submit">Продовжити</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="confirm-dialog" id="addCafeDialog" aria-labelledby="addCafeTitle">
+    <h2 id="addCafeTitle">Нова кав’ярня</h2>
+    <p id="addCafeHelp">Точка вже стоїть на мапі. Додай назву й, за бажанням, адресу.</p>
+    <form id="addCafeForm">
+      <input class="dialog-field" id="newCafeName" maxlength="100" placeholder="Назва кав’ярні" required>
+      <input class="dialog-field" id="newCafeAddress" maxlength="140" placeholder="Адреса, необов’язково">
+      <div class="confirm-actions">
+        <button class="confirm-button" id="cancelAddCafe" type="button">Скасувати</button>
+        <button class="confirm-button destructive" id="saveNewCafe" type="submit">Додати</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="confirm-dialog" id="deleteCafeDialog" aria-labelledby="deleteCafeTitle" aria-describedby="deleteCafeText">
+    <h2 id="deleteCafeTitle">Прибрати кав’ярню?</h2>
+    <p id="deleteCafeText">Вона зникне зі спільної мапи.</p>
+    <div class="confirm-actions">
+      <button class="confirm-button" id="cancelDeleteCafe" type="button">Скасувати</button>
+      <button class="confirm-button destructive" id="confirmDeleteCafe" type="button">Прибрати</button>
+    </div>
+  </dialog>
+
+  <script src="./supabase-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     (() => {
@@ -632,6 +684,11 @@
       const BOUNDARY_CACHE = "decaf-boundary-v1";
       const VISITED_KEY = "decaf-visited-v1";
       const REVIEWS_KEY = "decaf-reviews-v1";
+      const CUSTOM_CAFES_KEY = "decaf-custom-cafes-v1";
+      const HIDDEN_CAFES_KEY = "decaf-hidden-cafes-v1";
+      const PHOTO_BUCKET = "de-caf-photos";
+      const sharedConfig = window.DECAF_SHARED_CONFIG || {};
+      const inviteFromUrl = new URLSearchParams(location.search).get("invite");
       const KYIV_AREA = 3600421866;
       const KYIV_RELATION = 421866;
       const KYIV_CENTER = [50.4501, 30.5234];
@@ -683,15 +740,31 @@
         }
       };
 
+      const sharedInviteCode = inviteFromUrl || "";
+      const sharedRequested = Boolean(sharedInviteCode);
+      let sharedMode = false;
+      let sharedReady = false;
+      let sharedClient = null;
+      let sharedUser = null;
+      let sharedDisplayName = "";
+      let sharedCafeRows = [];
+      let sharedHiddenCafeIds = new Set();
+      let sharedRefreshTimer = 0;
+      let sharedChannel = null;
+
       const currentCafeCache = store.get(CAFE_CACHE, null);
       const cafeCache = currentCafeCache || store.get("decaf-cafes-v5", {});
       const boundaryCache = store.get(BOUNDARY_CACHE, {});
-      let cafes = Array.isArray(cafeCache.places) ? cafeCache.places : [];
+      let osmCafes = Array.isArray(cafeCache.places) ? cafeCache.places : [];
+      let cafes = osmCafes.slice();
+      let localCustomCafes = [].concat(store.get(CUSTOM_CAFES_KEY, []));
+      let localHiddenCafeIds = new Set([].concat(store.get(HIDDEN_CAFES_KEY, [])));
       let cafesFetchedAt = currentCafeCache ? Number(cafeCache.fetchedAt) || 0 : 0;
       let cityBoundary = Array.isArray(boundaryCache.rings) ? boundaryCache.rings : [];
       let boundaryFetchedAt = Number(boundaryCache.fetchedAt) || 0;
       let visited = new Set([].concat(store.get(VISITED_KEY, [])));
-      let reviews = [].concat(store.get(REVIEWS_KEY, []));
+      const localReviews = [].concat(store.get(REVIEWS_KEY, []));
+      let reviews = localReviews.slice();
       const cafeRatings = new Map();
 
       function updateCafeRatings() {
@@ -710,20 +783,21 @@
       updateCafeRatings();
 
       const ROAST_STOPS = [
-        { hex: "#987858", rgb: [152, 120, 88] },
+        { hex: "#eadfce", rgb: [234, 223, 206] },
+        { hex: "#cdb99d", rgb: [205, 185, 157] },
+        { hex: "#aa8e6f", rgb: [170, 142, 111] },
         { hex: "#806145", rgb: [128, 97, 69] },
-        { hex: "#684b36", rgb: [104, 75, 54] },
-        { hex: "#523a2b", rgb: [82, 58, 43] },
-        { hex: "#3d291f", rgb: [61, 41, 31] }
+        { hex: "#5d3d2e", rgb: [93, 61, 46] },
+        { hex: "#321f17", rgb: [50, 31, 23] }
       ];
 
       function roastColor(rating) {
         const score = Math.max(0, Math.min(5, Number(rating) || 0));
-        const step = Math.max(0, score - 1);
-        const lower = Math.floor(step);
-        const upper = Math.min(4, lower + 1);
-        if (lower === upper || step === lower) return ROAST_STOPS[lower].hex;
-        const amount = step - lower;
+        if (score === 0) return ROAST_STOPS[0].hex;
+        const lower = Math.floor(score);
+        const upper = Math.min(5, lower + 1);
+        if (lower === upper || score === lower) return ROAST_STOPS[lower].hex;
+        const amount = score - lower;
         const from = ROAST_STOPS[lower].rgb;
         const to = ROAST_STOPS[upper].rgb;
         return "rgb(" + from.map((value, i) => Math.round(value + (to[i] - value) * amount)).join(",") + ")";
@@ -738,11 +812,31 @@
       let drawFrame = 0;
       let drawTimer = 0;
       let ratingPreview = null;
+      let addingCafe = false;
+      let pendingCafePoint = null;
+      let pendingCafeRemoval = null;
+      let shakingCafeId = null;
+      let longPressTimer = 0;
+      let longPressStart = null;
+      let suppressMapClick = false;
+      const photoUrlCache = new Map();
 
       const LIFECYCLE = ["disused", "abandoned", "vacant", "demolished", "removed", "razed", "destroyed", "closed"];
       const NOT_COFFEE_CUISINE = /ice_cream|frozen_yogurt|bubble_tea|\btea\b|hookah|shisha|pizza|burger|sushi|kebab|shawarma|chicken|hot_dog|fast_food|bbq|noodle|ramen|restaurant|bistro|steak_house|seafood/;
       const NOT_COFFEE_NAME = /кальян|hookah|shisha|морозив|ice ?cream|gelato|bubble|шаурм|shawarm|піц|pizz|суші|sushi|бургер|burger|чайхан|tea ?house|їдальн|столова|хінкал|вареничн|пельмен|ресторан|restaurant|бістро|bistro|стейк|steak/i;
-      cafes = cafes.filter((cafe) => !NOT_COFFEE_NAME.test(cafe.name || "") && !/закрит|зачинен|не працює|closed/i.test(cafe.name || ""));
+      osmCafes = osmCafes
+        .filter((cafe) => !NOT_COFFEE_NAME.test(cafe.name || "") && !/закрит|зачинен|не працює|closed/i.test(cafe.name || ""))
+        .map((cafe) => ({ ...cafe, source: "osm" }));
+      localCustomCafes = localCustomCafes.map((cafe) => ({ ...cafe, source: "local" }));
+      function refreshCafeList() {
+        const hiddenIds = sharedMode ? sharedHiddenCafeIds : localHiddenCafeIds;
+        const customRows = sharedMode ? sharedCafeRows : localCustomCafes;
+        const merged = new Map();
+        osmCafes.forEach((cafe) => { if (!hiddenIds.has(cafe.id)) merged.set(cafe.id, cafe); });
+        customRows.forEach((cafe) => { if (!hiddenIds.has(cafe.id)) merged.set(cafe.id, cafe); });
+        cafes = Array.from(merged.values()).sort((a, b) => a.name.localeCompare(b.name, "uk"));
+      }
+      refreshCafeList();
       function isOperating(tags) {
         for (const key in tags) {
           if (LIFECYCLE.includes(key.split(":")[0])) return false;
@@ -795,6 +889,7 @@
           if (unique.has(key)) return;
           unique.set(key, {
             id: place.type + "/" + place.id,
+            source: "osm",
             name,
             address: cafeAddress(tags),
             lat: +lat.toFixed(6),
@@ -877,9 +972,10 @@
           );
           const latest = parseCafes(elements);
           if (!latest.length) throw new Error("Empty");
-          cafes = latest;
+          osmCafes = latest.map((cafe) => ({ ...cafe, source: "osm" }));
           cafesFetchedAt = Date.now();
-          store.set(CAFE_CACHE, { places: cafes, fetchedAt: cafesFetchedAt });
+          store.set(CAFE_CACHE, { places: osmCafes, fetchedAt: cafesFetchedAt });
+          refreshCafeList();
           hideStatus();
           redraw();
         } catch {
@@ -941,7 +1037,7 @@
         cafeCanvasContext = cafeCanvas.getContext("2d", { alpha: true });
       }
 
-      function drawBean(context, x, y, size, cafe) {
+      function drawBean(context, x, y, size, cafe, shake = 0) {
         const selected = selectedCafe && selectedCafe.id === cafe.id;
         const displaySize = size + (selected ? 5 : 0);
         if (selected) {
@@ -956,7 +1052,7 @@
 
         context.save();
         context.translate(x, y);
-        context.rotate(-Math.PI / 7.5);
+        context.rotate(-Math.PI / 7.5 + shake);
         context.scale(displaySize / 24, displaySize / 24);
         context.translate(-12, -12);
         context.fillStyle = roastColor(cafeRatings.get(cafe.id) || 0);
@@ -1008,6 +1104,7 @@
         const bounds = map.getBounds();
         const zoom = map.getZoom();
         const beanSize = zoom < 12 ? 17 : zoom < 14 ? 20 : zoom < 16 ? 23 : 26;
+        const shake = shakingCafeId ? Math.sin(performance.now() / 34) * .15 : 0;
         visiblePins = [];
         let selectedPin = null;
 
@@ -1022,10 +1119,10 @@
           };
           visiblePins.push(pin);
           if (selectedCafe && cafe.id === selectedCafe.id) selectedPin = pin;
-          else drawBean(context, pin.x, pin.y, beanSize, cafe);
+          else drawBean(context, pin.x, pin.y, beanSize, cafe, cafe.id === shakingCafeId ? shake : 0);
         });
 
-        if (selectedPin) drawBean(context, selectedPin.x, selectedPin.y, beanSize, selectedPin.cafe);
+        if (selectedPin) drawBean(context, selectedPin.x, selectedPin.y, beanSize, selectedPin.cafe, selectedPin.cafe.id === shakingCafeId ? shake : 0);
       }
 
       function schedulePinDraw() {
@@ -1062,6 +1159,310 @@
         return nearest;
       }
 
+      function setAddingCafe(active) {
+        addingCafe = Boolean(active);
+        const button = $("addCafeToggle");
+        button.setAttribute("aria-pressed", String(addingCafe));
+        map.getContainer().classList.toggle("placing-cafe", addingCafe);
+        $("mapHint").classList.toggle("on", addingCafe);
+        if (!addingCafe) pendingCafePoint = null;
+      }
+
+      function openCafeAddDialog(point) {
+        setAddingCafe(false);
+        pendingCafePoint = point;
+        $("addCafeForm").reset();
+        $("addCafeHelp").textContent = "Точка вже стоїть на мапі. Додай назву й, за бажанням, адресу.";
+        $("addCafeDialog").showModal();
+        setTimeout(() => $("newCafeName").focus(), 40);
+      }
+
+      async function saveCafe(event) {
+        event.preventDefault();
+        if (!pendingCafePoint) return;
+        const button = $("saveNewCafe");
+        button.disabled = true;
+        try {
+          if (sharedRequested && !sharedReady) throw new Error("Спільна мапа ще не підключена");
+          const cafe = {
+            id: makeCafeId(),
+            name: $("newCafeName").value.trim(),
+            address: $("newCafeAddress").value.trim(),
+            lat: +pendingCafePoint.lat.toFixed(6),
+            lon: +pendingCafePoint.lng.toFixed(6),
+            source: sharedMode ? "shared" : "local"
+          };
+          if (!cafe.name) return $("newCafeName").focus();
+
+          if (sharedMode) {
+            const { data, error } = await sharedClient.from("de_caf_cafes").insert({
+              id: cafe.id,
+              name: cafe.name,
+              address: cafe.address,
+              lat: cafe.lat,
+              lon: cafe.lon
+            }).select("*").single();
+            if (error) throw error;
+            sharedCafeRows.push(sharedCafeFromRow(data));
+            refreshCafeList();
+          } else {
+            const next = [...localCustomCafes, cafe];
+            if (!store.set(CUSTOM_CAFES_KEY, next)) throw new Error("Не вдалося зберегти кав’ярню в цьому браузері");
+            localCustomCafes = next;
+            refreshCafeList();
+          }
+
+          pendingCafePoint = null;
+          $("addCafeDialog").close();
+          redraw();
+          const saved = cafes.find((item) => item.id === cafe.id);
+          if (saved) selectCafe(saved, true);
+        } catch (error) {
+          $("addCafeHelp").textContent = sharedMode
+            ? "Не вдалося додати кав’ярню. Перевір підключення й спробуй ще раз."
+            : error.message || "Не вдалося додати кав’ярню.";
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      function startCafeShake(cafe) {
+        pendingCafeRemoval = cafe;
+        shakingCafeId = cafe.id;
+        const started = performance.now();
+        const duration = reduceMotion ? 0 : 620;
+        const animate = (now) => {
+          drawPins();
+          if (now - started < duration) {
+            requestAnimationFrame(animate);
+            return;
+          }
+          shakingCafeId = null;
+          drawPins();
+          $("deleteCafeText").textContent = sharedMode
+            ? `«${cafe.name}» зникне зі спільної мапи для всіх.`
+            : `«${cafe.name}» зникне з твоєї мапи.`;
+          $("deleteCafeDialog").showModal();
+        };
+        requestAnimationFrame(animate);
+      }
+
+      async function removeCafe(cafe) {
+        if (sharedRequested && !sharedReady) throw new Error("Спільна мапа ще не підключена");
+        if (sharedMode) {
+          const { error } = await sharedClient.rpc("de_caf_remove_cafe", { p_cafe_id: cafe.id });
+          if (error) throw error;
+          if (cafe.source === "osm") sharedHiddenCafeIds.add(cafe.id);
+          else sharedCafeRows = sharedCafeRows.filter((item) => item.id !== cafe.id);
+        } else if (cafe.source === "local") {
+          const next = localCustomCafes.filter((item) => item.id !== cafe.id);
+          if (!store.set(CUSTOM_CAFES_KEY, next)) throw new Error("Не вдалося оновити список кав’ярень");
+          localCustomCafes = next;
+        } else {
+          const next = new Set(localHiddenCafeIds);
+          next.add(cafe.id);
+          if (!store.set(HIDDEN_CAFES_KEY, Array.from(next))) throw new Error("Не вдалося оновити список кав’ярень");
+          localHiddenCafeIds = next;
+        }
+
+        if (selectedCafe && selectedCafe.id === cafe.id) closeCard();
+        refreshCafeList();
+        redraw();
+      }
+
+      function makeCafeId() {
+        const id = window.crypto && crypto.randomUUID
+          ? crypto.randomUUID()
+          : Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+        return "custom:" + id;
+      }
+
+      function loadSupabaseSdk() {
+        if (window.supabase && window.supabase.createClient) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+          script.onload = () => window.supabase && window.supabase.createClient
+            ? resolve()
+            : reject(new Error("Не вдалося завантажити бібліотеку спільної мапи"));
+          script.onerror = () => reject(new Error("Не вдалося завантажити бібліотеку спільної мапи"));
+          document.head.append(script);
+        });
+      }
+
+      function askForDisplayName() {
+        return new Promise((resolve) => {
+          const dialog = $("profileDialog");
+          const form = $("profileForm");
+          const input = $("profileName");
+          const onSubmit = (event) => {
+            event.preventDefault();
+            const name = input.value.trim();
+            if (!name) return;
+            dialog.close();
+            resolve(name);
+          };
+          const onCancel = (event) => event.preventDefault();
+          form.addEventListener("submit", onSubmit, { once: true });
+          dialog.addEventListener("cancel", onCancel, { once: true });
+          dialog.showModal();
+          setTimeout(() => input.focus(), 40);
+        });
+      }
+
+      function sharedCafeFromRow(row) {
+        return {
+          id: row.id,
+          name: row.name,
+          address: row.address || "",
+          lat: Number(row.lat),
+          lon: Number(row.lon),
+          source: "shared",
+          createdBy: row.created_by
+        };
+      }
+
+      function sharedReviewFromRow(row) {
+        return {
+          id: row.id,
+          cafeId: row.cafe_id,
+          cafeName: row.cafe_name,
+          rating: Number(row.rating),
+          drinks: row.drinks || [],
+          decaf: Boolean(row.decaf),
+          price: row.price == null ? null : Number(row.price),
+          text: row.body || "",
+          photo: row.photo_path || "",
+          createdAt: Date.parse(row.created_at) || Date.now(),
+          authorName: row.author_name || "Друг",
+          userId: row.user_id
+        };
+      }
+
+      async function loadSharedData() {
+        const [cafeResult, removedResult, reviewResult] = await Promise.all([
+          sharedClient.from("de_caf_cafes").select("*").order("created_at", { ascending: true }),
+          sharedClient.from("de_caf_removed_cafes").select("cafe_id"),
+          sharedClient.from("de_caf_reviews").select("*").order("created_at", { ascending: false })
+        ]);
+        const failed = cafeResult.error || removedResult.error || reviewResult.error;
+        if (failed) throw failed;
+
+        sharedCafeRows = (cafeResult.data || []).map(sharedCafeFromRow);
+        sharedHiddenCafeIds = new Set((removedResult.data || []).map((row) => row.cafe_id));
+        reviews = (reviewResult.data || []).map(sharedReviewFromRow);
+        visited = new Set(reviews.map((review) => review.cafeId));
+        updateCafeRatings();
+        refreshCafeList();
+        redraw();
+        renderAllReviews();
+        if (selectedCafe) renderCafeReviews();
+        updateBadge();
+      }
+
+      function queueSharedRefresh() {
+        clearTimeout(sharedRefreshTimer);
+        sharedRefreshTimer = setTimeout(() => {
+          loadSharedData().catch((error) => console.error("Could not refresh de caf data", error));
+        }, 220);
+      }
+
+      function watchSharedData() {
+        sharedChannel = sharedClient.channel("de-caf-shared-map")
+          .on("postgres_changes", { event: "*", schema: "public", table: "de_caf_reviews" }, queueSharedRefresh)
+          .on("postgres_changes", { event: "*", schema: "public", table: "de_caf_cafes" }, queueSharedRefresh)
+          .on("postgres_changes", { event: "*", schema: "public", table: "de_caf_removed_cafes" }, queueSharedRefresh)
+          .subscribe();
+      }
+
+      async function initializeSharedWorkspace() {
+        if (!sharedRequested) return;
+        const publishableKey = sharedConfig.publishableKey || sharedConfig.anonKey;
+        if (!sharedConfig.url || !publishableKey) {
+          showStatus("error");
+          $("statusText").textContent = "Спільний сервер ще не налаштований";
+          $("retry").hidden = true;
+          return;
+        }
+
+        showStatus("loading");
+        $("statusText").textContent = "Підключаю спільну мапу";
+        try {
+          await loadSupabaseSdk();
+          sharedClient = window.supabase.createClient(sharedConfig.url, publishableKey);
+          let { data: sessionResult, error } = await sharedClient.auth.getSession();
+          if (error) throw error;
+          if (!sessionResult.session) {
+            const signIn = await sharedClient.auth.signInAnonymously();
+            if (signIn.error) throw signIn.error;
+            sessionResult = { session: signIn.data.session };
+          }
+          sharedUser = sessionResult.session.user;
+
+          let joined = await sharedClient.rpc("de_caf_join", {
+            p_invite_code: sharedInviteCode,
+            p_display_name: null
+          });
+          if (joined.error) throw joined.error;
+          let member = Array.isArray(joined.data) ? joined.data[0] : joined.data;
+          sharedDisplayName = member && member.display_name || "";
+          if (!sharedDisplayName) {
+            const name = await askForDisplayName();
+            joined = await sharedClient.rpc("de_caf_join", {
+              p_invite_code: sharedInviteCode,
+              p_display_name: name
+            });
+            if (joined.error) throw joined.error;
+            member = Array.isArray(joined.data) ? joined.data[0] : joined.data;
+            sharedDisplayName = member && member.display_name || name;
+          }
+
+          sharedMode = true;
+          $("drawerTitle").childNodes[0].textContent = "Стрічка друзів ";
+          $("reviewsToggle").setAttribute("aria-label", "Стрічка друзів");
+          await loadSharedData();
+          sharedReady = true;
+          $("shareInvite").hidden = false;
+          watchSharedData();
+          hideStatus();
+        } catch (error) {
+          console.error("Could not open de caf shared map", error);
+          showStatus("error");
+          $("statusText").textContent = "Не вдалося підключитися до спільної мапи";
+          $("retry").hidden = true;
+        }
+      }
+
+      async function uploadSharedPhoto(dataUrl, reviewId) {
+        if (!dataUrl) return "";
+        const blob = await (await fetch(dataUrl)).blob();
+        const path = sharedUser.id + "/" + reviewId + ".jpg";
+        const { error } = await sharedClient.storage.from(PHOTO_BUCKET).upload(path, blob, {
+          contentType: "image/jpeg",
+          upsert: false
+        });
+        if (error) throw error;
+        return path;
+      }
+
+      async function showReviewPhoto(image, photoPath) {
+        if (!photoPath) return;
+        if (!sharedMode || photoPath.startsWith("data:")) {
+          image.src = photoPath;
+          return;
+        }
+        const cached = photoUrlCache.get(photoPath);
+        if (cached && cached.expiresAt > Date.now()) {
+          image.src = cached.url;
+          return;
+        }
+        const { data, error } = await sharedClient.storage.from(PHOTO_BUCKET).createSignedUrl(photoPath, 3600);
+        if (!error && data && image.isConnected) {
+          photoUrlCache.set(photoPath, { url: data.signedUrl, expiresAt: Date.now() + 55 * 60 * 1000 });
+          image.src = data.signedUrl;
+        }
+      }
+
       const formatDate = (ts) =>
         new Date(Number(ts)).toLocaleDateString("uk-UA", { day: "numeric", month: "short", year: "numeric" });
       const reviewDrinks = (r) => (Array.isArray(r.drinks) ? r.drinks : r.drink ? [r.drink] : []);
@@ -1090,6 +1491,12 @@
           title.textContent = review.cafeName || "Кав’ярня";
           item.append(title);
         }
+        if (sharedMode && review.authorName) {
+          const author = document.createElement("span");
+          author.className = "review-author";
+          author.textContent = review.authorName;
+          item.append(author);
+        }
 
         const head = document.createElement("div");
         head.className = "review-head";
@@ -1099,14 +1506,17 @@
         date.textContent = formatDate(review.createdAt);
         const tools = document.createElement("div");
         tools.className = "review-tools";
-        const remove = document.createElement("button");
-        remove.className = "review-delete";
-        remove.type = "button";
-        remove.dataset.deleteReview = review.id;
-        remove.setAttribute("aria-label", "Видалити відгук");
-        remove.title = "Видалити відгук";
-        remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9 7V4.8h6V7m2.5 0-.8 12H7.3L6.5 7m3.3 3.2v5.6m4.4-5.6v5.6"/></svg>';
-        tools.append(date, remove);
+        tools.append(date);
+        if (!sharedMode || (sharedUser && review.userId === sharedUser.id)) {
+          const remove = document.createElement("button");
+          remove.className = "review-delete";
+          remove.type = "button";
+          remove.dataset.deleteReview = review.id;
+          remove.setAttribute("aria-label", "Видалити відгук");
+          remove.title = "Видалити відгук";
+          remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9 7V4.8h6V7m2.5 0-.8 12H7.3L6.5 7m3.3 3.2v5.6m4.4-5.6v5.6"/></svg>';
+          tools.append(remove);
+        }
         head.append(beansRow(review.rating), tools);
         item.append(head);
 
@@ -1132,10 +1542,10 @@
         if (review.photo) {
           const photo = document.createElement("img");
           photo.className = "review-photo";
-          photo.src = review.photo;
           photo.alt = "";
           photo.loading = "lazy";
           item.append(photo);
+          showReviewPhoto(photo, review.photo);
         }
 
         if (withCafe && cafes.some((c) => c.id === review.cafeId)) {
@@ -1169,7 +1579,8 @@
         const list = $("allReviewList");
         const all = [...reviews].sort(byNewest);
         $("reviewsCount").textContent = all.length ? all.length : "";
-        list.replaceChildren(...(all.length ? all.map((r, i) => reviewNode(r, i, true)) : [emptyNode("Тут з’являться твої відгуки")]));
+        const emptyText = sharedMode ? "Тут з’являться нові відгуки друзів" : "Тут з’являться твої відгуки";
+        list.replaceChildren(...(all.length ? all.map((r, i) => reviewNode(r, i, true)) : [emptyNode(emptyText)]));
       }
 
       function updateBadge() { $("reviewsBadge").classList.toggle("on", reviews.length > 0); }
@@ -1183,18 +1594,26 @@
         $("deleteDialog").showModal();
       }
 
-      function deleteReview(id) {
+      async function deleteReview(id) {
         const review = reviews.find((item) => item.id === id);
         if (!review) return false;
-        const previous = reviews;
-        reviews = reviews.filter((item) => item.id !== id);
-        if (!store.set(REVIEWS_KEY, reviews)) {
-          reviews = previous;
-          return false;
+        if (sharedMode) {
+          const { error } = await sharedClient.from("de_caf_reviews")
+            .delete().eq("id", id).eq("user_id", sharedUser.id);
+          if (error) return false;
+          if (review.photo) sharedClient.storage.from(PHOTO_BUCKET).remove([review.photo]);
+        } else {
+          const previous = reviews;
+          reviews = reviews.filter((item) => item.id !== id);
+          if (!store.set(REVIEWS_KEY, reviews)) {
+            reviews = previous;
+            return false;
+          }
         }
+        reviews = reviews.filter((item) => item.id !== id);
         if (!reviews.some((item) => item.cafeId === review.cafeId)) {
           visited.delete(review.cafeId);
-          store.set(VISITED_KEY, Array.from(visited));
+          if (!sharedMode) store.set(VISITED_KEY, Array.from(visited));
         }
         updateCafeRatings();
         redraw();
@@ -1441,8 +1860,9 @@
         submit.disabled = true;
         $("reviewStatus").textContent = "";
         try {
-          const review = {
-            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+          if (sharedRequested && !sharedReady) throw new Error("Спільна мапа ще не підключена");
+          let review = {
+            id: sharedMode ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
             cafeId: selectedCafe.id,
             cafeName: selectedCafe.name,
             rating,
@@ -1451,14 +1871,38 @@
             price: $("reviewPrice").value === "" ? null : Number($("reviewPrice").value),
             text,
             photo: await compressPhoto($("reviewPhoto").files[0]),
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            authorName: sharedDisplayName,
+            userId: sharedUser && sharedUser.id
           };
-          reviews.unshift(review);
-          if (!store.set(REVIEWS_KEY, reviews)) {
-            reviews.shift();
-            return formError("Забагато місця — спробуй інше фото");
-          }
-          if (!visited.has(selectedCafe.id)) {
+
+          if (sharedMode) {
+            const localPhoto = review.photo;
+            review.photo = await uploadSharedPhoto(localPhoto, review.id);
+            const { data, error } = await sharedClient.from("de_caf_reviews").insert({
+              id: review.id,
+              cafe_id: review.cafeId,
+              cafe_name: review.cafeName,
+              user_id: sharedUser.id,
+              rating: review.rating,
+              drinks: review.drinks,
+              decaf: review.decaf,
+              price: review.price,
+              body: review.text,
+              photo_path: review.photo || null
+            }).select("*").single();
+            if (error) {
+              if (review.photo) sharedClient.storage.from(PHOTO_BUCKET).remove([review.photo]);
+              throw error;
+            }
+            review = sharedReviewFromRow(data);
+            reviews.unshift(review);
+          } else {
+            reviews.unshift(review);
+            if (!store.set(REVIEWS_KEY, reviews)) {
+              reviews.shift();
+              return formError("Забагато місця — спробуй інше фото");
+            }
             visited.add(selectedCafe.id);
             store.set(VISITED_KEY, Array.from(visited));
           }
@@ -1470,7 +1914,7 @@
           updateBadge();
           $("cafeCard").scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
         } catch (error) {
-          formError(error.message || "Не вдалося зберегти");
+          formError(sharedMode ? "Не вдалося зберегти. Перевір підключення й спробуй ще раз." : error.message || "Не вдалося зберегти");
         } finally {
           submit.disabled = false;
         }
@@ -1504,10 +1948,16 @@
         pendingDeleteId = null;
         $("deleteDialog").close();
       });
-      $("confirmDelete").addEventListener("click", () => {
+      $("confirmDelete").addEventListener("click", async () => {
         if (pendingDeleteId === null) return;
-        if (!deleteReview(pendingDeleteId)) {
-          $("deleteDialogText").textContent = "Не вдалося видалити відгук. Перевір вільне місце в браузері.";
+        const button = $("confirmDelete");
+        button.disabled = true;
+        let deleted = false;
+        try { deleted = await deleteReview(pendingDeleteId); }
+        catch { deleted = false; }
+        button.disabled = false;
+        if (!deleted) {
+          $("deleteDialogText").textContent = "Не вдалося видалити відгук. Спробуй ще раз.";
           return;
         }
         pendingDeleteId = null;
@@ -1545,9 +1995,78 @@
 
       $("retry").addEventListener("click", () => loadCafes(true));
 
+      $("addCafeToggle").addEventListener("click", () => {
+        if (sharedRequested && !sharedReady) {
+          showStatus("error");
+          $("statusText").textContent = "Спільна мапа ще не підключена";
+          $("retry").hidden = true;
+          return;
+        }
+        setAddingCafe(!addingCafe);
+        if (addingCafe) {
+          setDrawerOpen(false);
+          closeCard();
+        }
+      });
+
+      $("addCafeForm").addEventListener("submit", saveCafe);
+      $("cancelAddCafe").addEventListener("click", () => {
+        pendingCafePoint = null;
+        $("addCafeDialog").close();
+      });
+      $("addCafeDialog").addEventListener("cancel", () => { pendingCafePoint = null; });
+
+      $("cancelDeleteCafe").addEventListener("click", () => {
+        pendingCafeRemoval = null;
+        $("deleteCafeDialog").close();
+      });
+      $("deleteCafeDialog").addEventListener("cancel", () => { pendingCafeRemoval = null; });
+      $("confirmDeleteCafe").addEventListener("click", async () => {
+        if (!pendingCafeRemoval) return;
+        const button = $("confirmDeleteCafe");
+        const cafe = pendingCafeRemoval;
+        button.disabled = true;
+        try {
+          await removeCafe(cafe);
+          pendingCafeRemoval = null;
+          $("deleteCafeDialog").close();
+        } catch (error) {
+          $("deleteCafeText").textContent = sharedMode
+            ? "Не вдалося прибрати кав’ярню зі спільної мапи. Перевір підключення й спробуй ще раз."
+            : error.message || "Не вдалося прибрати кав’ярню.";
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      $("shareInvite").addEventListener("click", async () => {
+        if (!sharedInviteCode) return;
+        const inviteUrl = new URL(location.href);
+        inviteUrl.search = "";
+        inviteUrl.hash = "";
+        inviteUrl.searchParams.set("invite", sharedInviteCode);
+        try {
+          await navigator.clipboard.writeText(inviteUrl.toString());
+        } catch {
+          const input = document.createElement("textarea");
+          input.value = inviteUrl.toString();
+          input.style.position = "fixed";
+          input.style.opacity = "0";
+          document.body.append(input);
+          input.select();
+          document.execCommand("copy");
+          input.remove();
+        }
+        showStatus("success");
+        $("statusText").textContent = "Запрошення скопійовано";
+        $("retry").hidden = true;
+        setTimeout(hideStatus, 1800);
+      });
+
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
-        if (document.activeElement === $("search")) setSearchOpen(false);
+        if (addingCafe) setAddingCafe(false);
+        else if (document.activeElement === $("search")) setSearchOpen(false);
         else if ($("reviewsDrawer").classList.contains("open")) setDrawerOpen(false);
         else closeCard();
       });
@@ -1587,7 +2106,54 @@
       createCafeCanvas();
       map.on("moveend resize", schedulePinDraw);
 
+      const mapElement = map.getContainer();
+      mapElement.addEventListener("pointerdown", (event) => {
+        if (addingCafe || (event.button !== 0 && event.pointerType !== "touch")) return;
+        const rect = mapElement.getBoundingClientRect();
+        const cafe = cafeAtPoint({ x: event.clientX - rect.left, y: event.clientY - rect.top });
+        if (!cafe) return;
+        clearTimeout(longPressTimer);
+        longPressStart = {
+          pointerId: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          cafe,
+          triggered: false
+        };
+        longPressTimer = setTimeout(() => {
+          if (!longPressStart) return;
+          longPressStart.triggered = true;
+          suppressMapClick = true;
+          startCafeShake(cafe);
+          setTimeout(() => { suppressMapClick = false; }, 1200);
+        }, 650);
+      });
+      window.addEventListener("pointermove", (event) => {
+        if (!longPressStart || event.pointerId !== longPressStart.pointerId) return;
+        if (Math.hypot(event.clientX - longPressStart.x, event.clientY - longPressStart.y) > 11) {
+          clearTimeout(longPressTimer);
+          longPressStart = null;
+        }
+      }, { passive: true });
+      window.addEventListener("pointerup", (event) => {
+        if (!longPressStart || event.pointerId !== longPressStart.pointerId) return;
+        clearTimeout(longPressTimer);
+        longPressStart = null;
+      });
+      window.addEventListener("pointercancel", () => {
+        clearTimeout(longPressTimer);
+        longPressStart = null;
+      });
+
       map.on("click", (event) => {
+        if (suppressMapClick) {
+          suppressMapClick = false;
+          return;
+        }
+        if (addingCafe) {
+          openCafeAddDialog(event.latlng);
+          return;
+        }
         const cafe = cafeAtPoint(event.containerPoint);
         if (cafe) selectCafe(cafe);
         setDrawerOpen(false);
@@ -1595,6 +2161,7 @@
       });
 
       loadCafes().finally(loadBoundary);
+      if (sharedRequested) initializeSharedWorkspace();
     })();
   </script>
 </body>
