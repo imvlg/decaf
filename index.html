@@ -1133,15 +1133,6 @@ const latest = parseCafes(elements);
       function drawBean(context, x, y, size, cafe, scale = 1, shake = 0) {
         const selected = selectedCafe && selectedCafe.id === cafe.id;
         const displaySize = size * scale + (selected ? 5 : 0);
-        if (selected) {
-          context.beginPath();
-          context.arc(x, y, displaySize * .42, 0, Math.PI * 2);
-          context.fillStyle = "rgba(251, 248, 242, .9)";
-          context.fill();
-          context.lineWidth = 1.5;
-          context.strokeStyle = "#5d3d2e";
-          context.stroke();
-        }
         context.save();
         context.translate(x, y);
         context.rotate(-Math.PI / 7.5 + shake);
