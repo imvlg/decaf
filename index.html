@@ -659,7 +659,6 @@
 
   <dialog class="confirm-dialog" id="deleteDialog" aria-labelledby="deleteDialogTitle" aria-describedby="deleteDialogText">
     <h2 id="deleteDialogTitle">Видалити відгук?</h2>
-    <p id="deleteDialogText">Відгук буде видалено з карти й каталогу.</p>
     <div class="confirm-actions">
       <button class="confirm-button" id="cancelDelete" type="button">Скасувати</button>
       <button class="confirm-button destructive" id="confirmDelete" type="button">Видалити</button>
@@ -667,8 +666,7 @@
   </dialog>
 
   <dialog class="confirm-dialog" id="profileDialog" aria-labelledby="profileTitle">
-    <h2 id="profileTitle">Як тебе називати?</h2>
-    <p>Нік буде біля твоїх відгуків. Відгуки й фото зберігаються в Supabase та доступні всім, хто має запрошення. Не додавай чутливих даних.</p>
+    <h2 id="profileTitle">Ім'я або нік</h2>
     <form id="profileForm">
       <input class="dialog-field" id="profileName" maxlength="32" autocomplete="nickname" placeholder="Ім’я або нік" required>
       <div class="confirm-actions"><button class="confirm-button destructive" type="submit">Продовжити</button></div>
@@ -677,7 +675,7 @@
 
   <dialog class="confirm-dialog" id="addCafeDialog" aria-labelledby="addCafeTitle">
     <h2 id="addCafeTitle">Нова кав’ярня</h2>
-    <p id="addCafeHelp">Точка вже стоїть на мапі. Додай назву й, за бажанням, адресу.</p>
+    <p id="addCafeHelp">Точка вже стоїть на мапі.</p>
     <form id="addCafeForm">
       <input class="dialog-field" id="newCafeName" maxlength="100" placeholder="Назва кав’ярні" required>
       <input class="dialog-field" id="newCafeAddress" maxlength="140" placeholder="Адреса, необов’язково">
@@ -787,8 +785,6 @@
       let sharedRefreshTimer = 0;
       let sharedChannel = null;
 
-      // The feed belongs to the invite-only version. Show its control while connecting,
-      // so a server setup error does not make the feature appear to be missing.
       if (sharedRequested) {
         $("reviewsToggle").hidden = false;
         $("reviewsToggle").setAttribute("aria-label", "Стрічка друзів");
