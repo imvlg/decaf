@@ -2,14 +2,21 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="theme-color" content="#efe9de">
   <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="de caf">
   <title>de caf</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
   <style>
     :root {
       --ink: #2b1d16;
@@ -31,7 +38,7 @@
     }
 
     * { box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #ebe5d9; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; background: #ebe5d9; }
     button, input, textarea { font: inherit; color: inherit; }
     button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     svg { display: block; }
@@ -205,6 +212,7 @@
     }
     .status-retry svg { width: 15px; height: 15px; }
     .status.error .status-retry { display: grid; }
+    .status .status-retry[hidden] { display: none; }
 
     .sheet {
       position: fixed;
@@ -212,14 +220,13 @@
       top: calc(90px + env(safe-area-inset-top));
       right: 16px;
       width: 380px;
-      max-height: calc(100dvh - 106px);
-      padding: 22px;
+      max-height: calc(100dvh - 106px - env(safe-area-inset-top));
+      display: flex;
+      flex-direction: column;
+      padding: 0;
       border-radius: 24px;
       background: rgba(251, 248, 242, .95);
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      scrollbar-width: thin;
-      scrollbar-color: var(--faint) transparent;
+      overflow: hidden;
       opacity: 0;
       visibility: hidden;
       transform: translateY(-10px) scale(.97);
@@ -232,6 +239,24 @@
       transform: none;
       transition: opacity .25s var(--ease), transform .5s var(--spring), visibility 0s;
     }
+    .sheet-top {
+      flex: none;
+      padding: 20px 20px 10px;
+      transition: box-shadow .2s var(--ease);
+    }
+    .sheet.scrolled .sheet-top { box-shadow: 0 1px 0 var(--line); }
+    .sheet-body {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 0 20px 20px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: var(--faint) transparent;
+    }
+    .sheet-body > .review-list:first-child { margin-top: 0; }
     .sheet-handle { display: none; }
 
     .sheet-head { display: flex; align-items: flex-start; gap: 8px; }
@@ -275,12 +300,16 @@
       animation-delay: calc(var(--i, 0) * 45ms);
     }
     .review-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .review-tools { display: flex; align-items: center; gap: 7px; }
+    .review-tools { display: flex; align-items: center; gap: 2px; }
     .review-cafe { margin: 0 0 8px; font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
     .review-date { color: var(--muted); font-size: 11px; white-space: nowrap; }
-    .review-delete {
-      width: 30px;
-      height: 30px;
+    .review { transition: border-color .2s var(--ease), box-shadow .2s var(--ease); }
+    .review.editing { border-color: var(--roast); box-shadow: inset 0 0 0 1px var(--roast); }
+    .review-tools .review-date { margin-right: 2px; }
+    .review-delete, .review-edit {
+      flex: none;
+      width: 32px;
+      height: 32px;
       display: grid;
       place-items: center;
       padding: 0;
@@ -290,8 +319,8 @@
       background: transparent;
       transition: color .2s var(--ease), background .2s var(--ease);
     }
-    .review-delete svg { width: 15px; height: 15px; }
-    .review-delete:hover { color: var(--roast); background: var(--tint); }
+    .review-delete svg, .review-edit svg { width: 15px; height: 15px; }
+    .review-delete:hover, .review-edit:hover, .review-edit[aria-pressed="true"] { color: var(--roast); background: var(--tint); }
     .beans { display: flex; gap: 1px; }
     .beans svg { width: 15px; height: 15px; }
     .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
@@ -500,11 +529,19 @@
       box-shadow: 0 24px 70px rgba(43, 29, 22, .24);
     }
     .confirm-dialog::backdrop { background: rgba(43, 29, 22, .38); backdrop-filter: blur(3px); }
+    .confirm-dialog[open] { animation: dialog-in .32s var(--spring) both; }
+    .confirm-dialog[open]::backdrop { animation: fade-in .2s var(--ease) both; }
     .confirm-dialog h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
-    .confirm-dialog p { margin: 8px 0 20px; color: var(--muted); font-size: 13px; line-height: 1.45; }
-    .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
-    .confirm-button { min-height: 40px; padding: 0 15px; border: 0; border-radius: 999px; color: var(--roast); background: var(--tint); font: 600 13px "Manrope", system-ui, sans-serif; }
+    .confirm-dialog p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .confirm-dialog p[hidden] { display: none; }
+    .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+    .confirm-dialog form .confirm-actions { margin-top: 10px; }
+    .confirm-button { min-height: 42px; padding: 0 16px; border: 0; border-radius: 999px; color: var(--roast); background: var(--tint); font: 600 13px "Manrope", system-ui, sans-serif; transition: transform .2s var(--spring), opacity .2s; }
+    .confirm-button:active { transform: scale(.96); }
+    .confirm-button:disabled { opacity: .6; cursor: wait; }
     .confirm-button.destructive { color: var(--cream); background: var(--roast); }
+    @keyframes dialog-in { from { opacity: 0; transform: translateY(10px) scale(.96); } }
+    @keyframes fade-in { from { opacity: 0; } }
     @keyframes logo-arrive { from { opacity: 0; } to { opacity: 1; } }
     @keyframes drink-tilt {
       0%, 100% { transform: none; }
@@ -535,36 +572,47 @@
         right: 8px;
         bottom: calc(8px + env(safe-area-inset-bottom));
         width: auto;
-        max-height: 78dvh;
-        padding: 26px 18px 20px;
+        max-height: min(80dvh, calc(var(--vvh, 100dvh) - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
         border-radius: 26px;
-        transform: translateY(32px);
+        opacity: 1;
+        transform: translateY(calc(100% + 24px));
         transform-origin: bottom center;
-        transition: opacity .22s var(--ease), transform .3s var(--ease), max-height .3s var(--ease), visibility 0s .3s;
+        transition: transform .3s var(--ease), max-height .35s var(--ease), visibility 0s .3s;
       }
       .sheet.open {
-        transition: opacity .25s var(--ease), transform .5s var(--spring), max-height .3s var(--ease), visibility 0s;
+        transform: translateY(var(--drag, 0px));
+        transition: transform .45s var(--spring), max-height .35s var(--ease), visibility 0s;
       }
-      .sheet-handle {
-        position: sticky;
-        top: 0;
-        z-index: 5;
-        display: block;
-        width: 64px;
-        height: 24px;
-        margin: -26px auto 0;
-        border: 0;
-        border-radius: 12px;
-        background: rgba(251, 248, 242, .95);
+      .sheet.dragging { transition: none; }
+      .sheet.compact { max-height: min(46dvh, calc(var(--vvh, 100dvh) - 80px)); }
+      .sheet-top {
+        padding: 0 16px 10px;
         touch-action: none;
         cursor: grab;
+        user-select: none;
+        -webkit-user-select: none;
       }
-      #cafeCard .sheet-handle { background: transparent; }
-      #cafeCard .sheet-handle::before { display: none; }
-      .sheet-handle::before { content: ""; display: block; width: 36px; height: 4px; margin: auto; border-radius: 4px; background: var(--faint); }
-      .sheet.compact { max-height: 50dvh; }
+      .sheet.dragging .sheet-top { cursor: grabbing; }
+      .sheet-handle {
+        display: block;
+        width: 38px;
+        height: 4px;
+        margin: 8px auto 8px;
+        border-radius: 4px;
+        background: var(--faint);
+      }
+      .sheet-title { padding-top: 6px; }
+      .sheet-body { padding: 0 16px calc(16px + env(safe-area-inset-bottom) * .3); }
       .sheet-title h1, .sheet-title h2 { font-size: 20px; }
-      .status { bottom: calc(18px + env(safe-area-inset-bottom)); }
+      .review { padding: 13px; }
+      .review-delete, .review-edit { width: 36px; height: 36px; }
+      .bean-score { width: 44px; height: 44px; }
+      .search input, .price input, .review-form textarea, .dialog-field { font-size: 16px; }
+      .confirm-dialog { padding: 22px 20px 20px; border-radius: 26px; }
+      .confirm-actions { gap: 8px; }
+      .confirm-button { flex: 1; min-height: 46px; font-size: 14px; }
+      .status { bottom: calc(18px + env(safe-area-inset-bottom)); max-width: calc(100vw - 24px); }
+      .map-hint { bottom: calc(18px + env(safe-area-inset-bottom)); white-space: nowrap; }
     }
   </style>
 </head>
@@ -607,6 +655,7 @@
   </div>
 
   <aside class="sheet glass" id="reviewsDrawer" aria-labelledby="drawerTitle">
+    <div class="sheet-top">
     <div class="sheet-handle" aria-hidden="true"></div>
     <div class="sheet-head">
       <div class="sheet-title"><h2 id="drawerTitle">Відгуки <span class="count" id="reviewsCount"></span></h2></div>
@@ -617,10 +666,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
       </button>
     </div>
-    <div class="review-list" id="allReviewList"></div>
+    </div>
+    <div class="sheet-body">
+      <div class="review-list" id="allReviewList"></div>
+    </div>
   </aside>
 
   <aside class="sheet glass" id="cafeCard" aria-labelledby="cafeName">
+    <div class="sheet-top">
     <div class="sheet-handle" aria-hidden="true"></div>
     <div class="sheet-head">
       <div class="sheet-title"><h1 id="cafeName"></h1><p id="cafeAddress" hidden></p></div>
@@ -628,7 +681,9 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
       </button>
     </div>
+    </div>
 
+    <div class="sheet-body">
     <div class="review-list" id="reviewList"></div>
 
     <button class="add-review" id="addReview" type="button" aria-expanded="false" aria-controls="formWrap">
@@ -655,10 +710,12 @@
         </form>
       </div>
     </div>
+    </div>
   </aside>
 
   <dialog class="confirm-dialog" id="deleteDialog" aria-labelledby="deleteDialogTitle" aria-describedby="deleteDialogText">
     <h2 id="deleteDialogTitle">Видалити відгук?</h2>
+    <p id="deleteDialogText" hidden></p>
     <div class="confirm-actions">
       <button class="confirm-button" id="cancelDelete" type="button">Скасувати</button>
       <button class="confirm-button destructive" id="confirmDelete" type="button">Видалити</button>
@@ -696,7 +753,7 @@
   </dialog>
 
   <script src="./supabase-config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
   <script>
     (() => {
       const isImageElement = (target) => target instanceof Element && target.closest("img");
@@ -715,7 +772,16 @@
       const HIDDEN_CAFES_KEY = "decaf-hidden-cafes-v1";
       const PHOTO_BUCKET = "de-caf-photos";
       const sharedConfig = window.DECAF_SHARED_CONFIG || {};
-      const inviteFromUrl = new URLSearchParams(location.search).get("invite");
+      const INVITE_KEY = "decaf-invite-v1";
+      const isStandalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+      const inviteFromUrl = (() => {
+        const fromUrl = new URLSearchParams(location.search).get("invite");
+        try {
+          if (fromUrl) localStorage.setItem(INVITE_KEY, fromUrl);
+          else if (isStandalone) return localStorage.getItem(INVITE_KEY);
+        } catch { /* storage unavailable */ }
+        return fromUrl;
+      })();
       const KYIV_AREA = 3600421866;
       const KYIV_RELATION = 421866;
       const KYIV_CENTER = [50.4501, 30.5234];
@@ -863,6 +929,8 @@
       let longPressStart = null;
       let suppressMapClick = false;
       const photoUrlCache = new Map();
+      let editingReviewId = null;
+      const mobileQuery = matchMedia("(max-width: 700px)");
 
       const LIFECYCLE = ["disused", "abandoned", "vacant", "demolished", "removed", "razed", "destroyed", "closed"];
       const NOT_COFFEE_CUISINE = /ice_cream|frozen_yogurt|bubble_tea|\btea\b|hookah|shisha|pizza|burger|sushi|kebab|shawarma|chicken|hot_dog|fast_food|bbq|noodle|ramen|restaurant|bistro|steak_house|seafood/;
@@ -1074,6 +1142,8 @@ const latest = parseCafes(elements);
       function showStatus(kind) {
         const el = $("status");
         el.className = "status glass on " + kind;
+        el.title = "";
+        $("retry").hidden = false;
         $("statusText").textContent = kind === "loading" ? "Шукаю кав’ярні" : "Не вдалося завантажити";
       }
       function hideStatus() { $("status").classList.remove("on"); }
@@ -1382,6 +1452,7 @@ const latest = parseCafes(elements);
         return new Promise((resolve, reject) => {
           const script = document.createElement("script");
           script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+          script.crossOrigin = "anonymous";
           script.onload = () => window.supabase && window.supabase.createClient
             ? resolve()
             : reject(new Error("Не вдалося завантажити бібліотеку спільної мапи"));
@@ -1543,9 +1614,9 @@ const latest = parseCafes(elements);
           }
 
           sharedMode = true;
-          $("drawerTitle").childNodes[0].textContent = "Стрічка друзів ";
-          $("reviewsToggle").setAttribute("aria-label", "Стрічка друзів");
-          $("reviewsToggle").title = "Стрічка друзів";
+          $("drawerTitle").childNodes[0].textContent = "Стрічка ";
+          $("reviewsToggle").setAttribute("aria-label", "Стрічка");
+          $("reviewsToggle").title = "Стрічка";
           await loadSharedData();
           sharedReady = true;
           $("reviewsToggle").hidden = false;
@@ -1561,10 +1632,10 @@ const latest = parseCafes(elements);
         }
       }
 
-      async function uploadSharedPhoto(dataUrl, reviewId) {
+      async function uploadSharedPhoto(dataUrl, fileName) {
         if (!dataUrl) return "";
         const blob = await (await fetch(dataUrl)).blob();
-        const path = sharedUser.id + "/" + reviewId + ".jpg";
+        const path = sharedUser.id + "/" + fileName + ".jpg";
         const { error } = await sharedClient.storage.from(PHOTO_BUCKET).upload(path, blob, {
           contentType: "image/jpeg",
           upsert: false
@@ -1573,22 +1644,20 @@ const latest = parseCafes(elements);
         return path;
       }
 
-      async function showReviewPhoto(image, photoPath) {
-        if (!photoPath) return;
-        if (!sharedMode || photoPath.startsWith("data:")) {
-          image.src = photoPath;
-          return;
-        }
+      async function resolvePhotoUrl(photoPath) {
+        if (!photoPath) return "";
+        if (!sharedMode || photoPath.startsWith("data:")) return photoPath;
         const cached = photoUrlCache.get(photoPath);
-        if (cached && cached.expiresAt > Date.now()) {
-          image.src = cached.url;
-          return;
-        }
+        if (cached && cached.expiresAt > Date.now()) return cached.url;
         const { data, error } = await sharedClient.storage.from(PHOTO_BUCKET).createSignedUrl(photoPath, 3600);
-        if (!error && data && image.isConnected) {
-          photoUrlCache.set(photoPath, { url: data.signedUrl, expiresAt: Date.now() + 55 * 60 * 1000 });
-          image.src = data.signedUrl;
-        }
+        if (error || !data) return "";
+        photoUrlCache.set(photoPath, { url: data.signedUrl, expiresAt: Date.now() + 55 * 60 * 1000 });
+        return data.signedUrl;
+      }
+
+      async function showReviewPhoto(image, photoPath) {
+        const url = await resolvePhotoUrl(photoPath).catch(() => "");
+        if (url) image.src = url;
       }
 
       const formatDate = (ts) =>
@@ -1610,7 +1679,7 @@ const latest = parseCafes(elements);
 
       function reviewNode(review, index, withCafe) {
         const item = document.createElement("article");
-        item.className = "review";
+        item.className = "review" + (review.id === editingReviewId ? " editing" : "");
         item.style.setProperty("--i", Math.min(index, 8));
 
         if (withCafe) {
@@ -1636,6 +1705,15 @@ const latest = parseCafes(elements);
         tools.className = "review-tools";
         tools.append(date);
         if (!sharedMode || (sharedUser && review.userId === sharedUser.id)) {
+          const edit = document.createElement("button");
+          edit.className = "review-edit";
+          edit.type = "button";
+          edit.dataset.editReview = review.id;
+          edit.setAttribute("aria-label", "Редагувати відгук");
+          edit.setAttribute("aria-pressed", String(review.id === editingReviewId));
+          edit.title = "Редагувати відгук";
+          edit.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.2 5.2a2.1 2.1 0 0 1 3 0l.6.6a2.1 2.1 0 0 1 0 3L8.6 19H5v-3.6Z"/><path d="m13.6 6.8 3.6 3.6"/></svg>';
+          tools.append(edit);
           const remove = document.createElement("button");
           remove.className = "review-delete";
           remove.type = "button";
@@ -1718,7 +1796,8 @@ const latest = parseCafes(elements);
       function requestReviewDeletion(id) {
         if (!reviews.some((item) => item.id === id)) return;
         pendingDeleteId = id;
-        $("deleteDialogText").textContent = "Відгук буде видалено з карти й каталогу.";
+        $("deleteDialogText").textContent = "";
+        $("deleteDialogText").hidden = true;
         $("deleteDialog").showModal();
       }
 
@@ -1726,19 +1805,20 @@ const latest = parseCafes(elements);
         const review = reviews.find((item) => item.id === id);
         if (!review) return false;
         if (sharedMode) {
-          const { error } = await sharedClient.from("de_caf_reviews")
-            .delete().eq("id", id).eq("user_id", sharedUser.id);
-          if (error) return false;
-          if (review.photo) sharedClient.storage.from(PHOTO_BUCKET).remove([review.photo]);
-        } else {
-          const previous = reviews;
+          const { data, error } = await sharedClient.from("de_caf_reviews")
+            .delete().eq("id", id).eq("user_id", sharedUser.id).select("id");
+          if (error || !data || !data.length) return false;
+          if (review.photo) sharedClient.storage.from(PHOTO_BUCKET).remove([review.photo]).catch(() => {});
           reviews = reviews.filter((item) => item.id !== id);
-          if (!store.set(REVIEWS_KEY, reviews)) {
-            reviews = previous;
-            return false;
-          }
+        } else {
+          const next = reviews.filter((item) => item.id !== id);
+          if (!store.set(REVIEWS_KEY, next)) return false;
+          reviews = next;
         }
-        reviews = reviews.filter((item) => item.id !== id);
+        if (editingReviewId === id) {
+          resetForm();
+          setFormOpen(false);
+        }
         if (!reviews.some((item) => item.cafeId === review.cafeId)) {
           visited.delete(review.cafeId);
           if (!sharedMode) store.set(VISITED_KEY, Array.from(visited));
@@ -1763,30 +1843,50 @@ const latest = parseCafes(elements);
           $("reviewsDrawer").classList.remove("compact");
           closeCard();
           renderAllReviews();
-          $("reviewsDrawer").scrollTop = 0;
+          sheetBody("reviewsDrawer").scrollTop = 0;
         }
       }
 
-      function bindSheetDrag(sheet) {
-        const handle = sheet.querySelector(".sheet-handle");
-        let startY = null;
+      const sheetBody = (id) => $(id).querySelector(".sheet-body");
 
-        handle.addEventListener("pointerdown", (e) => {
-          if (e.pointerType === "mouse") return;
-          startY = e.clientY;
-          handle.setPointerCapture(e.pointerId);
-          e.preventDefault();
-          e.stopPropagation();
+      function bindSheetScrollShadow(sheet) {
+        const body = sheet.querySelector(".sheet-body");
+        body.addEventListener("scroll", () => sheet.classList.toggle("scrolled", body.scrollTop > 2), { passive: true });
+      }
+
+      function bindSheetDrag(sheet, onClose) {
+        const grip = sheet.querySelector(".sheet-top");
+        let drag = null;
+
+        const finish = (event, cancelled) => {
+          if (!drag || event.pointerId !== drag.pointerId) return;
+          const distance = drag.distance;
+          const velocity = distance / Math.max(1, performance.now() - drag.startedAt);
+          drag = null;
+          sheet.classList.remove("dragging");
+          sheet.style.removeProperty("--drag");
+          if (cancelled) return;
+          if (distance > 260 || (distance > 60 && velocity > .9)) onClose();
+          else if (distance > 70) {
+            if (sheet.classList.contains("compact")) onClose();
+            else sheet.classList.add("compact");
+          } else if (distance < -40) sheet.classList.remove("compact");
+        };
+
+        grip.addEventListener("pointerdown", (e) => {
+          if (!mobileQuery.matches || e.button > 0 || e.target.closest("button, a, input")) return;
+          drag = { pointerId: e.pointerId, startY: e.clientY, distance: 0, startedAt: performance.now() };
+          grip.setPointerCapture(e.pointerId);
+          sheet.classList.add("dragging");
         });
-        handle.addEventListener("pointerup", (e) => {
-          if (startY === null) return;
-          const distance = e.clientY - startY;
-          if (distance > 48) sheet.classList.add("compact");
-          if (distance < -48) sheet.classList.remove("compact");
-          startY = null;
-          e.stopPropagation();
+        grip.addEventListener("pointermove", (e) => {
+          if (!drag || e.pointerId !== drag.pointerId) return;
+          drag.distance = e.clientY - drag.startY;
+          const offset = drag.distance < 0 ? drag.distance * .2 : drag.distance;
+          sheet.style.setProperty("--drag", offset + "px");
         });
-        handle.addEventListener("pointercancel", () => { startY = null; });
+        grip.addEventListener("pointerup", (e) => finish(e, false));
+        grip.addEventListener("pointercancel", (e) => finish(e, true));
       }
 
       function setFormOpen(open) {
@@ -1794,16 +1894,37 @@ const latest = parseCafes(elements);
         $("addReview").setAttribute("aria-expanded", String(open));
         if (open) {
           $("cafeCard").classList.remove("compact");
-          setTimeout(() => $("addReview").scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" }), 180);
+          setTimeout(() => {
+            const body = sheetBody("cafeCard");
+            const target = editingReviewId ? $("formWrap") : $("addReview");
+            body.scrollTo({ top: Math.max(0, target.offsetTop - 8), behavior: reduceMotion ? "auto" : "smooth" });
+          }, 180);
         }
       }
 
       function resetForm() {
+        const wasEditing = editingReviewId;
+        editingReviewId = null;
         $("reviewForm").reset();
         setRating(0, false);
         $("reviewStatus").textContent = "";
-        $("photoBtn").classList.remove("has-photo");
-        $("photoBtn").style.backgroundImage = "";
+        const btn = $("photoBtn");
+        if (btn.dataset.url) URL.revokeObjectURL(btn.dataset.url);
+        delete btn.dataset.url;
+        btn.classList.remove("has-photo");
+        btn.style.backgroundImage = "";
+        if (wasEditing) {
+          document.querySelectorAll(".review.editing").forEach((node) => node.classList.remove("editing"));
+          document.querySelectorAll('.review-edit[aria-pressed="true"]').forEach((node) => node.setAttribute("aria-pressed", "false"));
+        }
+      }
+
+      function flyToCafe(cafe) {
+        if (!Number.isFinite(cafe.lat) || !Number.isFinite(cafe.lon)) return;
+        const zoom = Math.max(map.getZoom(), 17);
+        let target = L.latLng(cafe.lat, cafe.lon);
+        if (mobileQuery.matches) target = map.unproject(map.project(target, zoom).add([0, window.innerHeight * .22]), zoom);
+        map.flyTo(target, zoom, { duration: .6 });
       }
 
       function selectCafe(cafe, fly = false) {
@@ -1812,24 +1933,59 @@ const latest = parseCafes(elements);
         selectedCafe = cafe;
         schedulePinDraw();
         $("cafeName").textContent = cafe.name;
-        $("cafeAddress").textContent = cafe.address;
+        $("cafeAddress").textContent = cafe.address || "";
         $("cafeAddress").hidden = !cafe.address;
         if (changed) {
           resetForm();
           setFormOpen(false);
-          $("cafeCard").classList.remove("compact");
-          $("cafeCard").scrollTop = 0;
+          $("cafeCard").classList.remove("compact", "scrolled");
+          sheetBody("cafeCard").scrollTop = 0;
         }
         renderCafeReviews();
         $("cafeCard").classList.add("open");
-        if (fly) map.flyTo([cafe.lat, cafe.lon], Math.max(map.getZoom(), 17), { duration: .6 });
+        if (fly) flyToCafe(cafe);
       }
 
       function closeCard() {
         if (!selectedCafe) return;
         selectedCafe = null;
+        if (editingReviewId) {
+          resetForm();
+          setFormOpen(false);
+        }
         schedulePinDraw();
         $("cafeCard").classList.remove("open");
+      }
+
+      async function startEditReview(id) {
+        const review = reviews.find((item) => item.id === id);
+        if (!review) return;
+        if (editingReviewId === id) {
+          resetForm();
+          setFormOpen(false);
+          return;
+        }
+        const cafe = cafes.find((item) => item.id === review.cafeId) ||
+          { id: review.cafeId, name: review.cafeName || "Кав’ярня", address: "", lat: NaN, lon: NaN };
+        const fromFeed = $("reviewsDrawer").classList.contains("open") || !selectedCafe || selectedCafe.id !== cafe.id;
+        selectCafe(cafe, fromFeed);
+        resetForm();
+        editingReviewId = id;
+        setRating(review.rating, false);
+        const drinks = reviewDrinks(review);
+        document.querySelectorAll('input[name="drink"]').forEach((input) => { input.checked = drinks.includes(input.value); });
+        $("reviewDecaf").checked = Boolean(review.decaf);
+        $("reviewPrice").value = review.price == null ? "" : String(review.price);
+        $("reviewText").value = review.text || "";
+        renderCafeReviews();
+        setFormOpen(true);
+        if (review.photo) {
+          const url = await resolvePhotoUrl(review.photo).catch(() => "");
+          if (url && editingReviewId === id && !$("reviewPhoto").files.length) {
+            $("photoBtn").style.backgroundImage = 'url("' + url.replace(/"/g, "%22") + '")';
+            $("photoBtn").classList.add("has-photo");
+          }
+        }
       }
 
       function setSearchOpen(open) {
@@ -1925,8 +2081,24 @@ const latest = parseCafes(elements);
       }
 
       buildForm();
-      bindSheetDrag($("cafeCard"));
-      bindSheetDrag($("reviewsDrawer"));
+      bindSheetDrag($("cafeCard"), closeCard);
+      bindSheetDrag($("reviewsDrawer"), () => setDrawerOpen(false));
+      bindSheetScrollShadow($("cafeCard"));
+      bindSheetScrollShadow($("reviewsDrawer"));
+
+      const syncViewport = () => {
+        const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        document.documentElement.style.setProperty("--vvh", Math.round(height) + "px");
+      };
+      syncViewport();
+      if (window.visualViewport) window.visualViewport.addEventListener("resize", syncViewport);
+      window.addEventListener("resize", syncViewport);
+      mobileQuery.addEventListener?.("change", () => {
+        document.querySelectorAll(".sheet").forEach((sheet) => {
+          sheet.classList.remove("compact", "dragging");
+          sheet.style.removeProperty("--drag");
+        });
+      });
       updateBadge();
 
       $("beanRating").addEventListener("click", (e) => {
@@ -1987,8 +2159,52 @@ const latest = parseCafes(elements);
         const submit = $("submitReview");
         submit.disabled = true;
         $("reviewStatus").textContent = "";
+        const editing = editingReviewId && reviews.find((item) => item.id === editingReviewId);
         try {
           if (sharedRequested && !sharedReady) throw new Error("Спільна мапа ще не підключена");
+          if (editing) {
+            const fields = {
+              rating,
+              drinks,
+              decaf: $("reviewDecaf").checked,
+              price: $("reviewPrice").value === "" ? null : Number($("reviewPrice").value),
+              text
+            };
+            const newPhoto = await compressPhoto($("reviewPhoto").files[0]);
+            let updated;
+            if (sharedMode) {
+              const newPath = newPhoto ? await uploadSharedPhoto(newPhoto, editing.id + "-" + Date.now().toString(36)) : "";
+              const { data, error } = await sharedClient.from("de_caf_reviews").update({
+                rating: fields.rating,
+                drinks: fields.drinks,
+                decaf: fields.decaf,
+                price: fields.price,
+                body: fields.text,
+                photo_path: newPath || editing.photo || null
+              }).eq("id", editing.id).eq("user_id", sharedUser.id).select("*").single();
+              if (error || !data) {
+                if (newPath) sharedClient.storage.from(PHOTO_BUCKET).remove([newPath]).catch(() => {});
+                throw error || new Error("Update failed");
+              }
+              if (newPath && editing.photo) {
+                sharedClient.storage.from(PHOTO_BUCKET).remove([editing.photo]).catch(() => {});
+                photoUrlCache.delete(editing.photo);
+              }
+              updated = sharedReviewFromRow(data);
+            } else {
+              updated = { ...editing, ...fields, photo: newPhoto || editing.photo || "", updatedAt: Date.now() };
+            }
+            const next = reviews.map((item) => item.id === editing.id ? updated : item);
+            if (!sharedMode && !store.set(REVIEWS_KEY, next)) return formError("Забагато місця — спробуй інше фото");
+            reviews = next;
+            updateCafeRatings();
+            redraw();
+            resetForm();
+            setFormOpen(false);
+            renderCafeReviews();
+            renderAllReviews();
+            return;
+          }
           let review = {
             id: sharedMode ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
             cafeId: selectedCafe.id,
@@ -2025,6 +2241,7 @@ const latest = parseCafes(elements);
             }
             review = sharedReviewFromRow(data);
             reviews.unshift(review);
+            visited.add(review.cafeId);
           } else {
             reviews.unshift(review);
             if (!store.set(REVIEWS_KEY, reviews)) {
@@ -2039,8 +2256,9 @@ const latest = parseCafes(elements);
           resetForm();
           setFormOpen(false);
           renderCafeReviews();
+          renderAllReviews();
           updateBadge();
-          $("cafeCard").scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+          sheetBody("cafeCard").scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
         } catch (error) {
           formError(sharedMode ? "Не вдалося зберегти. Перевір підключення й спробуй ще раз." : error.message || "Не вдалося зберегти");
         } finally {
@@ -2048,7 +2266,20 @@ const latest = parseCafes(elements);
         }
       });
 
-      $("addReview").addEventListener("click", () => setFormOpen(!$("formWrap").classList.contains("open")));
+      $("addReview").addEventListener("click", () => {
+        const open = $("formWrap").classList.contains("open");
+        if (editingReviewId) resetForm();
+        setFormOpen(!open);
+      });
+      $("reviewText").addEventListener("focus", () => {
+        if (!mobileQuery.matches) return;
+        setTimeout(() => {
+          const body = sheetBody("cafeCard");
+          const field = $("reviewText");
+          const top = field.offsetTop - Math.max(12, (body.clientHeight - field.offsetHeight) / 2);
+          body.scrollTo({ top: Math.max(0, top), behavior: reduceMotion ? "auto" : "smooth" });
+        }, 320);
+      });
       $("closeCard").addEventListener("click", closeCard);
 
       $("visitedFilter").addEventListener("click", () => {
@@ -2072,6 +2303,11 @@ const latest = parseCafes(elements);
           requestReviewDeletion(remove.dataset.deleteReview);
           return;
         }
+        const edit = e.target.closest("[data-edit-review]");
+        if (edit) {
+          startEditReview(edit.dataset.editReview);
+          return;
+        }
         const btn = e.target.closest("[data-cafe-id]");
         const cafe = btn && cafes.find((c) => c.id === btn.dataset.cafeId);
         if (cafe) selectCafe(cafe, true);
@@ -2093,17 +2329,22 @@ const latest = parseCafes(elements);
         button.disabled = false;
         if (!deleted) {
           $("deleteDialogText").textContent = "Не вдалося видалити відгук. Спробуй ще раз.";
+          $("deleteDialogText").hidden = false;
           return;
         }
         pendingDeleteId = null;
         $("deleteDialog").close();
       });
-      $("deleteDialog").addEventListener("cancel", () => { pendingDeleteId = null; });
-      $("deleteDialog").addEventListener("click", (e) => {
-        if (e.target === $("deleteDialog")) {
-          pendingDeleteId = null;
-          $("deleteDialog").close();
-        }
+      $("deleteDialog").addEventListener("close", () => { pendingDeleteId = null; });
+
+      ["deleteDialog", "addCafeDialog", "deleteCafeDialog"].forEach((id) => {
+        const dialog = $(id);
+        dialog.addEventListener("click", (e) => {
+          if (e.target !== dialog) return;
+          const rect = dialog.getBoundingClientRect();
+          const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+          if (!inside) dialog.close();
+        });
       });
 
       $("searchToggle").addEventListener("click", () => setSearchOpen(!$("searchControl").classList.contains("open")));
@@ -2149,13 +2390,13 @@ const latest = parseCafes(elements);
         pendingCafePoint = null;
         $("addCafeDialog").close();
       });
-      $("addCafeDialog").addEventListener("cancel", () => { pendingCafePoint = null; });
+      $("addCafeDialog").addEventListener("close", () => { pendingCafePoint = null; });
 
       $("cancelDeleteCafe").addEventListener("click", () => {
         pendingCafeRemoval = null;
         $("deleteCafeDialog").close();
       });
-      $("deleteCafeDialog").addEventListener("cancel", () => { pendingCafeRemoval = null; });
+      $("deleteCafeDialog").addEventListener("close", () => { pendingCafeRemoval = null; });
       $("confirmDeleteCafe").addEventListener("click", async () => {
         if (!pendingCafeRemoval) return;
         const button = $("confirmDeleteCafe");
@@ -2233,6 +2474,7 @@ const latest = parseCafes(elements);
         maxZoom: 19,
         updateWhenZooming: false,
         keepBuffer: 1,
+        crossOrigin: true,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
       }).addTo(map);
 
@@ -2292,13 +2534,28 @@ const latest = parseCafes(elements);
           return;
         }
         const cafe = cafeAtPoint(event.containerPoint);
-        if (cafe) { animateCafePinPress(cafe); selectCafe(cafe); }
+        if (cafe) {
+          animateCafePinPress(cafe);
+          selectCafe(cafe);
+          const visibleTop = window.innerHeight * .38;
+          if (mobileQuery.matches && event.containerPoint.y > visibleTop) {
+            map.panBy([0, event.containerPoint.y - visibleTop * .7], { animate: !reduceMotion, duration: .4 });
+          }
+        } else if (!$("formWrap").classList.contains("open")) {
+          closeCard();
+        }
         setDrawerOpen(false);
         if (!$("search").value) setSearchOpen(false);
       });
 
       loadCafes().finally(loadBoundary);
       if (sharedRequested) initializeSharedWorkspace();
+
+      if ("serviceWorker" in navigator && window.isSecureContext) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch((error) => console.warn("Service worker", error));
+        });
+      }
     })();
   </script>
 </body>

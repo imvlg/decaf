@@ -67,6 +67,7 @@ grant select on public.de_caf_members to authenticated;
 grant select, insert on public.de_caf_cafes to authenticated;
 grant select on public.de_caf_removed_cafes to authenticated;
 grant select, insert, delete on public.de_caf_reviews to authenticated;
+grant update (rating, drinks, decaf, price, body, photo_path) on public.de_caf_reviews to authenticated;
 
 create or replace function public.de_caf_is_member()
 returns boolean
@@ -202,6 +203,12 @@ for insert to authenticated with check (public.de_caf_is_member() and user_id = 
 drop policy if exists de_caf_reviews_delete_own on public.de_caf_reviews;
 create policy de_caf_reviews_delete_own on public.de_caf_reviews
 for delete to authenticated using (public.de_caf_is_member() and user_id = auth.uid());
+
+drop policy if exists de_caf_reviews_update_own on public.de_caf_reviews;
+create policy de_caf_reviews_update_own on public.de_caf_reviews
+for update to authenticated
+using (public.de_caf_is_member() and user_id = auth.uid())
+with check (public.de_caf_is_member() and user_id = auth.uid());
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('de-caf-photos', 'de-caf-photos', false, 12582912, array['image/jpeg', 'image/png', 'image/webp'])
